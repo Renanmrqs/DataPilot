@@ -45,28 +45,25 @@ for coluna in ["OrderDateKey", "DueDateKey", "ShipDateKey"]:
         (tratado[coluna].notna() & datas.isna()).sum(),
     )
 
-print("\nVALORES MONETÁRIOS E DESCONTOS")
+colunas_monetarias = [
+    "Unit Price",
+    "Extended Amount",
+    "Product Standard Cost",
+    "Total Product Cost",
+    "Sales Amount",
+]
 
-print("\nCONFERÊNCIA DE SALES AMOUNT")
+for coluna in colunas_monetarias:
+    valor_esperado = (
+        original[coluna]
+        .str.replace("$", "", regex=False)
+        .str.replace(",", "", regex=False)
+        .astype(float)
+    )
 
-# Converte os valores originais para o formato numérico esperado.
-valor_esperado = (
-    original["Sales Amount"]
-    .str.replace("$", "", regex=False)
-    .str.replace(",", "", regex=False)
-    .astype(float)
-)
+    valor_tratado = tratado[coluna]
 
-valor_tratado = tratado["Sales Amount"]
+    iguais = (valor_esperado - valor_tratado).abs() < 0.000001
 
-# Uma pequena tolerância evita diferenças irrelevantes de ponto flutuante.
-iguais = (valor_esperado - valor_tratado).abs() < 0.000001
-
-print("Valores diferentes:", (~iguais).sum())
-
-print("\nAmostra para conferir visualmente:")
-print(pd.DataFrame({
-    "original": original["Sales Amount"],
-    "esperado": valor_esperado,
-    "tratado": valor_tratado,
-}).head(10))
+    print(f"\nConferência de {coluna}")
+    print("Valores diferentes:", (~iguais).sum())
