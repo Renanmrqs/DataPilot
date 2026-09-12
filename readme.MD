@@ -4,7 +4,7 @@
 
 ### BI & AI Copilot for trustworthy business insights
 
-[![Status](https://img.shields.io/badge/status-planning-F2C94C?style=for-the-badge)](#roadmap)
+[![Status](https://img.shields.io/badge/status-initial_development-F2C94C?style=for-the-badge)](#roadmap)
 [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
@@ -21,14 +21,14 @@ A personal portfolio project that connects data engineering, analytics, APIs, BI
 
 | Item | Current state |
 |---|---|
-| Phase | Planning / initial development |
+| Phase | Initial development |
 | Current sprint | Sprint 1 — Data Foundation |
-| Current task | Initial Sales ETL implemented; treated CSV saved |
+| Current task | Initial source data review completed; relational modeling next |
 | Method | Lightweight Scrum — 1-week sprints |
 | Weekly dedication | Approximately 2–4 hours |
 | Development | Renan + ChatGPT |
 
-DataPilot has just started. This README documents the intended architecture and roadmap; it does not claim that every component is already implemented.
+The initial Sales ETL and source data review are complete. The database, API, dashboards and AI features below remain planned.
 
 ## Vision
 
@@ -85,65 +85,93 @@ The AI integration is designed to support providers such as Gemini, Groq or Deep
 
 ## Repository structure
 
-The structure will evolve as each sprint is implemented:
+Current repository layout:
 
 ```text
 DataPilot/
-├── data/           # sample or development datasets
-├── src/            # application and ETL source code
-├── tests/          # automated tests
-├── docs/           # architecture and project notes
-├── .env.example    # configuration template
-└── README.md
+|-- data/
+|   |-- raw/                    # original source CSVs
+|   `-- processed/              # transformed Sales CSV
+|-- scripts/                    # data inspection and validation scripts
+|-- sql/                        # reserved for database definitions
+|-- src/
+|   `-- etl/transform_sales.py   # Sales transformation
+|-- tests/                      # reserved for automated tests
+|-- AGENTS.md                   # collaboration preferences
+`-- readme.MD
 ```
 
-## Desenvolvimento local
+## Current progress
 
-## Estado atual
+- [x] Inspect all six source CSVs.
+- [x] Convert Sales monetary values, discount percentages and date keys.
+- [x] Save the transformed Sales dataset to `data/processed/sales.csv`.
+- [x] Review Sales row counts, keys, dates and all five monetary columns.
+- [x] Check discount conversion during development, including nonzero examples.
+- [ ] Define the relational model and SQL schema.
 
-- CSVs originais em `data/raw/`.
-- Scripts para inspecionar os dados em `scripts/`.
-- Transformacao de Sales em `src/etl/transform_sales.py`.
-- Sales tratada salva em `data/processed/sales.csv` ao executar o transformador.
-- Pastas `sql/` e `tests/` reservadas para etapas futuras.
-- Calendar ainda pendente, para uma proxima etapa.
+### Source data review
 
-## Modelo de dados
+| Dataset | Initial findings | Action |
+|---|---|---|
+| Sales | Monetary values and percentages stored as text; dates stored as numeric keys | Convert values and save a processed CSV |
+| Product | Numeric costs and prices; unique, non-null ProductKey; 56 missing colors and 102 repeated SKU occurrences beyond the first | Preserve source values; no cleanup identified |
+| Customer | 18,485 rows; unique, non-null CustomerKey; missing attributes only on the -1 record | Preserve the special record |
+| Reseller | 702 rows; unique, non-null ResellerKey; missing attributes only on the -1 record | Preserve the special record |
+| Sales-Territory | 11 rows; unique, non-null SalesTerritoryKey; no missing values | No cleanup identified |
+| Sales-Order | 121,253 rows; unique, non-null SalesOrderLineKey; no missing values | No cleanup identified |
 
-Sales e a tabela fato: cada linha representa um item de pedido, identificado por `SalesOrderLineKey`.
-Customer, Product, Reseller e Sales-Territory sao dimensoes.
-Sales-Order tem uma relacao 1:1 com Sales por `SalesOrderLineKey`.
+These are initial inspection findings, not a complete validation of business rules or relationships. Missing colors and repeated SKUs were preserved. The meaning of the Customer and Reseller `-1` records still needs to be documented from the source context.
 
-## Executar no PowerShell
+## Data model outline
 
-Na pasta raiz do projeto, usando o ambiente virtual existente com pandas:
+Sales is the fact table: each row represents a sales order item identified by `SalesOrderLineKey`.
+
+| Related dataset | Join key in Sales | Intended relationship |
+|---|---|---|
+| Product | ProductKey | Many sales items to one product record |
+| Customer | CustomerKey | Many sales items to one customer record |
+| Reseller | ResellerKey | Many sales items to one reseller record |
+| Sales-Territory | SalesTerritoryKey | Many sales items to one territory |
+| Sales-Order | SalesOrderLineKey | One order item to one order detail record |
+
+This outline will guide the SQL schema. Calendar is deferred to a later step.
+
+## Local development
+
+Run from the project root in PowerShell, using the existing virtual environment with pandas installed:
 
 ```powershell
-# Inspecionar todos os CSVs originais
+# Inspect all original CSVs
 .\.venv\Scripts\python.exe scripts/inspect_all_date.py
 
-# Ver uma amostra de Sales
-.\.venv\Scripts\python.exe scripts/inspect_sales.py
+# Inspect Product
+.\.venv\Scripts\python.exe scripts/inspect_product.py
 
-# Transformar e salvar Sales
+# Transform and save Sales
 .\.venv\Scripts\python.exe src/etl/transform_sales.py
+
+# Review the saved Sales dataset against the original
+.\.venv\Scripts\python.exe scripts/check_sales.py
 ```
 
-## O que a transformacao faz
+The transformation preserves the original files and overwrites only `data/processed/sales.csv`. It removes currency symbols and thousands separators, converts percentages to fractions, and converts date keys to dates. Missing or invalid dates become missing values. Dates are saved as `YYYY-MM-DD`; CSV files do not retain pandas data types.
 
-1. Le o CSV de Sales em `data/raw/`.
-2. Remove os simbolos de moeda e separadores de milhar e converte os valores para numeros decimais.
-3. Converte percentuais para fracao: por exemplo, `5%` vira `0.05`.
-4. Converte OrderDateKey, DueDateKey e ShipDateKey para datas.
-5. Salva o resultado em `data/processed/sales.csv`, sem adicionar uma coluna de indice.
+The current validation script prints row counts, missing and repeated keys, key order preservation, date checks and monetary differences. Results require review; the script does not yet enforce assertions. Discount checks were run during development but are not currently included in the saved script.
 
-Os originais ficam preservados. Executar novamente substitui apenas o CSV tratado.
-Datas ausentes continuam vazias; datas invalidas tambem sao convertidas em valores ausentes pelo script atual.
-O CSV salva as datas como `AAAA-MM-DD`, mas nao guarda os tipos do pandas: ao reler, e preciso converter as colunas de data novamente.
+## Next steps
 
-## Proxima sessao
+1. Document table grain, keys and relationships, then define the PostgreSQL schema in `sql/`.
+2. Prepare a reproducible database setup and load the reviewed datasets.
+3. Check relationships and reconcile row counts after loading.
+4. Add the discount checks to the saved validation script and standardize existing code identifiers, comments and output messages in English.
+5. Build initial SQL metrics and the first Qlik dashboard once the data foundation is ready.
 
-Revisar juntos a Sales salva e escolher um pequeno proximo passo. A dimensao Calendar fica para depois.
+The next session starts with the relational model. Calendar and AI integration remain later steps.
+
+## Project language
+
+README content, code identifiers, comments and console messages should be written in English. Existing scripts still contain some Portuguese text and will be standardized as they are updated. Learning discussions can remain in Portuguese.
 
 ## Author
 

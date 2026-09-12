@@ -9,12 +9,14 @@ Registradas a pedido de Renan em 2026-09-11 para orientar as próximas sessões.
 - Ao implementar, explicar brevemente a intenção, as decisões relevantes e como verificar o resultado. Tornar explícitos os critérios de correção, exemplos de falha e limites da validação, sem presumir que Renan já sabe revisar tudo sozinho.
 - Priorizar pequenos trechos e verificações ligados ao projeto real. Consultar código e documentação faz parte do processo.
 - Manter comunicação informal, respeitosa e em português. Não confundir a preocupação com avaliação crítica com falta de compreensão básica da sintaxe.
+- Write the README, project documentation, code identifiers, comments and console messages in English. Renan is learning English at an intermediate level. Keep conversations and explanations in Portuguese and explain English terms when helpful. Standardize existing code when revisiting it, without broad unsolicited refactoring.
+- Manter a estrutura o mais profissional e seria utilizavel em um projeto real, também sem overengeening.
 
 ## Experiência e motivação
 
 - Renan faz estágio com Qlik Sense e dados. Não trabalha com a stack de desenvolvimento deste projeto no dia a dia.
-- Sua experiência anterior de estudo em desenvolvimento foi com JavaScript e React; não presumir experiência profissional com essas tecnologias nem domínio avançado de desenvolvimento.
+- Sua experiência anterior de estudo em desenvolvimento foi com JavaScript e React recente, e python APIS e DBS anterior a isso; não presumir experiência profissional com essas tecnologias nem domínio avançado de desenvolvimento.
 - Desenvolve o DataPilot para portfólio e porque gosta de desenvolvimento, além do interesse em dados.
 - Pode esquecer sintaxe por falta de uso frequente. Oferecer lembretes e exemplos pontuais quando necessário, sem tratar isso como ausência de fundamentos nem exigir memorização.
 - Não gosta de apenas receber tudo pronto: quer participar, tentar e aprender durante a construção. Criar oportunidades pequenas de prática e decisão, intercaladas com implementação assistida, respeitando o tempo disponível.
-- Ajustar a profundidade das explicações conforme a etapa e suas dúvidas; aproveitar conexões com Qlik Sense, dados, JavaScript e React quando ajudarem a entender.
+- Ajustar a profundidade das explicações conforme a etapa e suas dúvidas; aproveitar conexões com Qlik Sense, dados, JavaScript, React, python quando ajudarem a entender.
