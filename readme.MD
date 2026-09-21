@@ -1,25 +1,27 @@
 # DataPilot
 
-A learning and portfolio project combining a standalone analytics portal with an AI assistant for business questions.
+**Português** | [English](README.en.md)
 
-**Status: local prototype.** The interface is in Brazilian Portuguese and runs outside Qlik Sense. Visual design and the analysis experience still need refinement.
+Projeto de aprendizado e portfólio que combina um portal de análise independente com um assistente de IA para perguntas sobre o negócio.
 
-**Guides:** [Português](docs/prototype.pt-BR.md) · [English](docs/prototype.md) · [Technical analysis flow](docs/business-analysis.md)
+**Estado atual: protótipo local.** A interface está em português brasileiro e funciona fora do Qlik Sense. O visual e a experiência de análise ainda precisam de refinamento.
 
-## What works today
+**Guias:** [Protótipo em português](docs/prototype.pt-BR.md) · [Protótipo em inglês](docs/prototype.md) · [Fluxo técnico da análise — em inglês](docs/business-analysis.md)
 
-- Validated loading of six CSV datasets into SQLite.
-- A web overview with filters, sales KPIs and charts.
-- Business questions mapped to approved panels for sales, average order value, gross margin and products.
-- SQL/Python calculates the values; an optional AI provider selects the analysis plan and explains the results.
-- Configurable providers and models, including Gemini, DeepSeek, OpenAI and compatible endpoints.
-- A calculated panel remains available if its AI explanation fails.
+## O que funciona hoje
 
-The customer asks a business question, rather than specifying chart types. Current panels use predefined layouts; unrestricted dashboard generation and conversation memory are not implemented.
+- Carregamento validado de seis conjuntos de dados CSV no SQLite.
+- Um painel web com filtros, indicadores de vendas e gráficos.
+- Perguntas de negócio que geram painéis predefinidos de vendas, ticket médio, margem bruta e produtos.
+- Cálculos feitos em SQL/Python; a IA, quando configurada, escolhe o plano de análise e explica os resultados.
+- Provedores e modelos configuráveis, incluindo Gemini, DeepSeek, OpenAI e serviços com API compatível.
+- O painel calculado continua disponível se a explicação da IA falhar.
 
-## Run locally
+O usuário faz uma pergunta sobre o negócio, e o assistente escolhe os indicadores e gráficos relacionados. A IA escolhe gráficos e indicadores entre opções permitidas. O chat considera as últimas quatro trocas e os filtros da análise anterior. Os gráficos são opcionais.
 
-From the repository root in PowerShell:
+## Como executar localmente
+
+Na pasta principal do projeto, abra o PowerShell:
 
 ```powershell
 py -m venv .venv
@@ -28,51 +30,61 @@ py -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-Create the virtual environment only if it does not exist. Open http://127.0.0.1:8000.
-Stop the server before rebuilding the database on Windows.
+Crie o ambiente virtual somente se ele ainda não existir. Abra http://127.0.0.1:8000.
+No Windows, pare o servidor antes de reconstruir o banco de dados.
 
-AI is optional: copy [.env.example](.env.example) to `.env`, configure credentials and model IDs locally, and restart the server. Never commit credentials. See the guides for setup and limitations.
+A IA é opcional: copie [.env.example](.env.example) para `.env`, configure as credenciais e os identificadores dos modelos localmente e reinicie o servidor. Nunca inclua credenciais em commits. Consulte os guias para detalhes de configuração e limitações.
 
-## How it fits together
+## Como as partes se conectam
+
+O caminho dos dados:
 
 ```text
-Source CSVs -> validated Python load -> SQLite -> FastAPI -> web portal
-                                                   |
-Business question -> approved AI plan -> calculated KPIs/charts -> AI explanation
+CSVs originais -> validação e carga em Python -> SQLite -> FastAPI -> portal web
 ```
 
-| Location | Responsibility |
+O caminho de uma análise:
+
+```text
+Pergunta -> plano validado da IA -> indicadores e gráficos calculados -> explicação da IA
+```
+
+A API coordena esse fluxo, consultando o banco para calcular os valores usados no painel e na explicação.
+
+| Local | Responsabilidade |
 |---|---|
-| `src/etl/build_database.py` | Validate and load original CSVs |
-| `sql/schema.sql` | Relational tables, constraints and sales view |
-| `src/api/` | HTTP routes and analysis orchestration |
-| `src/analytics/` | Approved metrics, queries and panel recipes |
-| `src/ai/` | Provider requests and validated analysis plans |
-| `src/web/` | Portuguese interface and chart rendering |
-| `tests/` | Data, API and mocked AI regression tests |
-| `docs/` | Setup, metric definitions and known limitations |
+| `src/etl/build_database.py` | Validar e carregar os CSVs originais |
+| `sql/schema.sql` | Definir tabelas, restrições e a visão de vendas |
+| `src/api/` | Receber requisições HTTP e coordenar a análise |
+| `src/analytics/` | Definir métricas, consultas e estruturas dos painéis |
+| `src/ai/` | Enviar requisições aos provedores e validar planos de análise |
+| `src/web/` | Exibir a interface em português e desenhar os gráficos |
+| `tests/` | Verificar dados, API e integração com respostas de IA simuladas |
+| `docs/` | Documentar configuração, métricas e limitações conhecidas |
 
-SQLite supports the current local setup. PostgreSQL is a planned migration, not a current dependency. The older `transform_sales.py` script is separate from the prototype database load.
+O SQLite atende à execução local atual. A migração para PostgreSQL está planejada. O script antigo `transform_sales.py` é separado do carregamento do banco usado pelo protótipo.
 
-## Correctness and limits
+## Validação e limites
 
-Orders count distinct sales orders, not rows. Average order value uses selected revenue divided by distinct selected orders. Gross profit subtracts product cost and is not net profit. Source currency has not been identified beyond its dollar symbol.
+A quantidade de pedidos usa a contagem distinta dos pedidos de venda. O ticket médio divide a receita selecionada pelos pedidos distintos da seleção. O lucro bruto desconta o custo dos produtos; despesas necessárias ao cálculo do lucro líquido não estão disponíveis. A moeda da fonte ainda não foi identificada além do símbolo de dólar.
 
-The loader checks keys, relationships, dates and monetary values, then reconciles totals before replacing the database. AI uses validated aggregates and cannot execute arbitrary SQL; it can still misunderstand a question or invent a textual explanation.
+O carregamento verifica chaves, relacionamentos, datas e valores monetários, depois confere os totais antes de substituir o banco. A IA usa dados agregados validados e não pode executar SQL arbitrário. Mesmo assim, pode interpretar uma pergunta incorretamente ou inventar uma explicação.
+
+Para executar os testes:
 
 ```powershell
 .\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
 ```
 
-Automated provider tests use mocks. A live Gemini analysis completed after a transient service failure; that does not establish reliability across providers or questions.
+Os testes automatizados dos provedores usam respostas simuladas. Uma análise real com Gemini foi concluída após uma falha temporária do serviço. Essa verificação não garante confiabilidade para todos os provedores ou perguntas.
 
-This is a single-user local prototype without authentication or production deployment. Supported data covers sales-related questions, not every department. Each question is independent. A supported analysis normally has two AI stages; a transient failure can trigger one retry per stage. Provider usage and account limits apply.
+Este é um protótipo local para um usuário, sem autenticação ou configuração de produção. A base atual cobre perguntas relacionadas a vendas. A conversa mantém contexto recente na memória do navegador. Uma análise suportada normalmente usa duas etapas de IA; uma falha temporária pode gerar uma nova tentativa por etapa. O uso está sujeito aos custos e limites da conta no provedor.
 
-## Next refinement
+## Próximos refinamentos
 
-1. Improve chart readability, labels, spacing and the visual hierarchy of the portal.
-2. Refine how questions, answers and related panels fit together.
-3. Evaluate representative questions across configured providers against the calculated values.
-4. Keep changes small, understandable and verifiable before expanding the supported data.
+1. Melhorar a legibilidade dos gráficos, os rótulos, os espaçamentos e a organização visual do portal.
+2. Refinar como perguntas, respostas e painéis relacionados aparecem juntos.
+3. Comparar perguntas representativas entre os provedores configurados, conferindo as respostas com os valores calculados.
+4. Manter as mudanças pequenas, compreensíveis e verificáveis antes de ampliar os dados suportados.
 
-The product direction is **chat + an analytics portal outside BI**, sharing the same validated metric layer.
+A direção do produto é **chat + portal de análise fora do BI**, compartilhando as mesmas definições e cálculos validados de métricas.

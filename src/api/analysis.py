@@ -1,18 +1,28 @@
 """Orchestrate question -> validated plan -> calculated panel -> interpretation."""
 from contextlib import closing
 from datetime import date
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.ai.analysis_plan import select_analysis
+from src.ai.analysis_plan import AnalysisFilters, select_analysis
 from src.ai.copilot import explain
 from src.analytics.analysis import available_values, build_analysis, filter_sql
+
+
+class ConversationMessage(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4000)
 
 
 class AnalysisRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
+    history: list[ConversationMessage] = Field(default_factory=list, max_length=8)
+    analysis_filters: AnalysisFilters | None = None
     provider: str = Field(min_length=1, max_length=50)
     model: str = Field(min_length=1, max_length=150)
     question: str = Field(min_length=1, max_length=2000)
@@ -28,16 +38,20 @@ def create_analysis_router(open_connection):
     @router.post("/api/analysis")
     def analyze(request: AnalysisRequest):
         filters = request.model_dump(
-            mode="json", exclude={"provider", "model", "question"}
+            mode="json", exclude={"provider", "model", "question", "history", "analysis_filters"}
         )
         if request.start_date and request.end_date and request.start_date > request.end_date:
             raise HTTPException(422, "A data inicial não pode ser posterior à data final.")
+
+        if request.analysis_filters is not None:
+            filters.update(request.analysis_filters.model_dump(mode="json", exclude_unset=True))
+        history = [message.model_dump() for message in request.history]
 
         with closing(open_connection()) as connection:
             options = available_values(connection)
             filter_sql(filters, options)
         plan, planning_ms = select_analysis(
-            request.provider, request.model, request.question, filters, options
+            request.provider, request.model, request.question, filters, options, history=history
         )
         result = {
             "provider": request.provider,
@@ -67,7 +81,7 @@ def create_analysis_router(open_connection):
 
         try:
             interpretation = explain(
-                request.provider, request.model, request.question, context
+                request.provider, request.model, request.question, context, history=history
             )
             result.update(interpretation)
             result["elapsed_ms"] += planning_ms

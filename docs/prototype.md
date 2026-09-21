@@ -26,7 +26,7 @@ Stop the server before rebuilding the database, to avoid file locks on Windows.
 
 The first demonstration must run outside Qlik. SQLite allows a local prototype without a database service.
 PostgreSQL remains a future migration; this version is a local, single-user demonstration, with no authentication or deployment setup.
-The overview covers fixed sales questions. The assistant now selects approved topic panels from business questions; see [business-question analysis](business-analysis.md). Arbitrary chart generation and multi-turn analysis remain future scope.
+The overview covers fixed sales questions. The assistant now selects approved topic panels from business questions; see [business-question analysis](business-analysis.md). The planner now selects allowlisted charts per question and receives the last four exchanges; see [conversational analysis](conversation.md). Arbitrary chart generation remains outside the scope.
 
 Implemented:
 - Six source datasets loaded into related tables with primary and foreign key constraints.

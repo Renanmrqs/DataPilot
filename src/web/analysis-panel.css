@@ -5,11 +5,11 @@
 .analysis-panel {
   margin: 22px 0;
   padding-top: 20px;
-  border-top: 1px solid #dfe5ee;
+  border-top: 1px solid var(--border);
 }
 .analysis-scope,
 .analysis-notes {
-  color: #596e89;
+  color: var(--muted);
   font-size: 13px;
   line-height: 1.6;
 }
@@ -21,14 +21,14 @@
 }
 .analysis-kpi,
 .analysis-chart {
-  background: white;
-  border: 1px solid #dfe5ee;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 18px;
   min-width: 0;
 }
 .analysis-kpi p {
-  color: #61738c;
+  color: var(--muted);
   font-size: 13px;
   margin: 0 0 10px;
 }
@@ -67,22 +67,22 @@
 .analysis-bar-track {
   position: relative;
   height: 10px;
-  background: #edf1f8;
+  background: var(--surface-soft);
   margin-top: 8px;
 }
 .analysis-fill {
   position: absolute;
   height: 100%;
-  background: #5078dd;
+  background: var(--chart);
 }
 .analysis-fill.negative {
-  background: #c85662;
+  background: var(--danger);
 }
 .analysis-zero {
   position: absolute;
   top: -2px;
   bottom: -2px;
-  border-left: 1px solid #65758b;
+  border-left: 1px solid var(--muted);
 }
 .analysis-values,
 .analysis-notes {

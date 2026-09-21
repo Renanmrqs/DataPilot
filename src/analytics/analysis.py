@@ -71,6 +71,40 @@ def make_chart(title, metric, rows, kind, dimension):
     }
 
 
+def selected_charts(connection, specs, where, parameters):
+    """Compile only allowlisted dimensions and metrics into aggregate queries."""
+    charts = []
+    dimensions = {
+        "month": ("substr(order_date, 1, 7)", "label", "mês"),
+        "product": ("product", "product_key, product", "produto"),
+        **{key: (value[0], value[0], value[1]) for key, value in DIMENSIONS.items()},
+    }
+    for spec in specs:
+        column, group, label = dimensions[spec.dimension]
+        rows = [add_ratios(row) for row in connection.execute(
+            f"SELECT {column} AS label, " + AGGREGATES
+            + " FROM sales_detail" + where + f" GROUP BY {group}", parameters,
+        )]
+        if spec.dimension == "month":
+            rows.sort(key=lambda row: row["label"])
+        else:
+            rows.sort(key=lambda row: (
+                row[spec.metric] is None,
+                -(row[spec.metric] or 0),
+                row["label"],
+            ))
+            if spec.dimension == "product":
+                rows = rows[:10]
+        title = METRICS[spec.metric][0] + " por " + label
+        if spec.dimension == "product":
+            title += " (até 10 produtos)"
+        charts.append(make_chart(
+            title, spec.metric, rows,
+            "line" if spec.dimension == "month" else "bar", spec.dimension,
+        ))
+    return charts
+
+
 def build_analysis(connection, plan, current_filters):
     options = available_values(connection)
     filters = dict(current_filters)
@@ -128,6 +162,9 @@ def build_analysis(connection, plan, current_filters):
             recipe["support"], monthly, "line", "month",
         ))
 
+    if plan.charts is not None:
+        charts = selected_charts(connection, plan.charts, where, parameters)
+
     notes = [
         "O painel analisa o período e os filtros indicados abaixo; o painel principal continua com sua seleção original.",
         "Os gráficos ajudam a investigar padrões, mas não comprovam causas nem definem se um valor é alto ou baixo.",
@@ -137,7 +174,7 @@ def build_analysis(connection, plan, current_filters):
         notes.append("O ticket considera apenas os itens da categoria selecionada, não o pedido completo.")
     if plan.topic == "margin":
         notes.append("Resultado bruto desconta somente o custo dos produtos; não representa lucro líquido.")
-    if plan.topic == "products":
+    if plan.topic == "products" and plan.charts is None:
         notes.append(f"O ranking mostra até 10 produtos por {ranking_label}; os indicadores consideram todos os produtos selecionados.")
 
     panel = {
@@ -148,7 +185,7 @@ def build_analysis(connection, plan, current_filters):
         "empty": summary["line_count"] == 0,
         "kpis": [
             {"label": METRICS[key][0], "format": METRICS[key][1], "value": summary[key]}
-            for key in recipe["kpis"]
+            for key in (plan.kpis if plan.kpis is not None else recipe["kpis"])
         ],
         "charts": charts,
     }

@@ -25,6 +25,23 @@ let metadata;
 let currentSnapshot = null;
 let providers = [];
 let aiBusy = false;
+let conversation = [];
+let conversationFilters = null;
+let conversationVersion = 0;
+
+function clearConversation() {
+  conversation = [];
+  conversationFilters = null;
+  conversationVersion += 1;
+  $("answers").replaceChildren();
+}
+
+$("new-conversation").addEventListener("click", () => {
+  clearConversation();
+  $("question").value = "";
+  $("ai-status").textContent = "Nova conversa. Faça uma pergunta sobre os dados.";
+  $("question").focus();
+});
 async function request(url) {
   const response = await fetch(url);
   const data = await response.json();
@@ -45,18 +62,18 @@ function renderTrend(rows) {
   const max = Math.max(...rows.map(row => row.revenue_cents), 1);
   [0, .5, 1].forEach(fraction => {
     const y = 195 - fraction * 165;
-    svg.append(svgElement("line", {x1: 85, x2: 640, y1: y, y2: y, stroke: "#e8edf5"}));
-    svg.append(svgElement("text", {x: 75, y: y + 4, "text-anchor": "end", fill: "#718198", "font-size": 11}, "$ " + new Intl.NumberFormat("pt-BR", {notation:"compact"}).format(max * fraction / 100)));
+    svg.append(svgElement("line", {x1: 85, x2: 640, y1: y, y2: y, stroke: "var(--grid)"}));
+    svg.append(svgElement("text", {x: 75, y: y + 4, "text-anchor": "end", fill: "var(--muted)", "font-size": 11}, "$ " + new Intl.NumberFormat("pt-BR", {notation:"compact"}).format(max * fraction / 100)));
   });
   const points = rows.map((row, i) => [rows.length === 1 ? 360 : 90 + i * 540 / (rows.length - 1), 195 - row.revenue_cents / max * 165]);
-  svg.append(svgElement("polyline", {points: points.map(point => point.join(",")).join(" "), fill:"none", stroke:"#5078dd", "stroke-width":3}));
+  svg.append(svgElement("polyline", {points: points.map(point => point.join(",")).join(" "), fill:"none", stroke:"var(--chart)", "stroke-width":3}));
   points.forEach(([x,y], i) => {
-    const dot = svgElement("circle", {cx:x,cy:y,r:3,fill:"#5078dd"});
+    const dot = svgElement("circle", {cx:x,cy:y,r:3,fill:"var(--chart)"});
     dot.append(svgElement("title", {}, formatMonth(rows[i].month) + ": " + money(rows[i].revenue_cents)));
     svg.append(dot);
   });
-  svg.append(svgElement("text", {x:90,y:225,fill:"#718198","font-size":12}, formatMonth(rows[0].month)));
-  if (rows.length > 1) svg.append(svgElement("text", {x:630,y:225,"text-anchor":"end",fill:"#718198","font-size":12}, formatMonth(rows.at(-1).month)));
+  svg.append(svgElement("text", {x:90,y:225,fill:"var(--muted)","font-size":12}, formatMonth(rows[0].month)));
+  if (rows.length > 1) svg.append(svgElement("text", {x:630,y:225,"text-anchor":"end",fill:"var(--muted)","font-size":12}, formatMonth(rows.at(-1).month)));
   $("trend").append(svg);
   rows.forEach(row => {
     const tr = document.createElement("tr");
@@ -81,7 +98,7 @@ function renderCategories(rows) {
 }
 async function refresh() {
   currentSnapshot=null;
-  $("answers").replaceChildren();
+  clearConversation();
   updateModels(false);
   $("apply").disabled=true;$("reset").disabled=true;
   $("results").hidden=true;$("status").className="";$("status").textContent="Atualizando resultados…";
@@ -141,33 +158,41 @@ $("copilot-form").addEventListener("submit",async event=>{
   event.preventDefault();
   if(!currentSnapshot || aiBusy) return;
   const snapshot=currentSnapshot;
+  const turnVersion=conversationVersion;
   const question=$("question").value.trim();
   if(!question) {$("ai-status").textContent="Digite uma pergunta.";return;}
   aiBusy=true;$("ask").disabled=true;$("ai-status").textContent="Entendendo a pergunta e preparando a análise…";
   try {
     const response=await fetch("/api/analysis",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({provider:$("provider").value,model:$("model").value,question,...snapshot.filters})
+      body:JSON.stringify({provider:$("provider").value,model:$("model").value,question,...snapshot.filters,history:conversation,analysis_filters:conversationFilters})
     });
     const data=await response.json();
     if(!response.ok) throw new Error(typeof data.detail==="string" ? data.detail : "Revise a pergunta e o modelo selecionado.");
-    if(currentSnapshot!==snapshot) return;
+    if(currentSnapshot!==snapshot || turnVersion!==conversationVersion) return;
     const card=document.createElement("article");card.className="answer";
     const title=document.createElement("h3");title.textContent=(providers.find(provider=>provider.id===data.provider)?.label || "Provedor")+" · "+data.model;
     const timing=document.createElement("small");timing.textContent=new Intl.NumberFormat("pt-BR", {minimumFractionDigits:1, maximumFractionDigits:1}).format(data.elapsed_ms/1000)+" s"+(data.context_id ? " · Contexto "+data.context_id : "");
     const asked=document.createElement("p");asked.className="asked";asked.textContent=question;
     const answer=document.createElement("p");answer.className="answer-text";answer.textContent=data.answer;
     const notice=document.createElement("small");notice.textContent=data.notice+(data.truncated ? " A resposta atingiu o limite de tamanho." : "");
-    card.append(title, timing, asked);
+    card.append(title, timing, asked, answer, notice);
     if (data.panel) {
-      card.append(window.renderAnalysisPanel(data.panel));
+      card.append(window.renderOptionalAnalysisPanel(data.panel));
     }
-    card.append(answer, notice);
-    $("answers").prepend(card);
+    $("answers").append(card);
+    conversation.push(
+      {role: "user", content: question},
+      {role: "assistant", content: data.answer.slice(0, 4000)},
+    );
+    conversation = conversation.slice(-8);
+    if (data.panel) conversationFilters = data.panel.filters;
+    $("question").value = "";
+    card.scrollIntoView({block: "nearest", behavior: "smooth"});
     $("ai-status").textContent = data.status === "partial"
       ? "Painel calculado; a explicação da IA não ficou disponível."
       : "Análise recebida. Você pode fazer outra pergunta ou comparar com outro modelo.";
-  } catch(error) {if(currentSnapshot===snapshot) $("ai-status").textContent=errorMessage(error);}
+  } catch(error) {if(currentSnapshot===snapshot && turnVersion===conversationVersion) $("ai-status").textContent=errorMessage(error);}
   finally {aiBusy=false;$("ask").disabled=!currentSnapshot || !providers.find(item=>item.id===$("provider").value)?.configured;}
 });
 (async()=>{

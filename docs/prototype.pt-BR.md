@@ -8,7 +8,7 @@ Um produto com duas partes conectadas: **um portal de análise fora do BI e um a
 
 O portal já mostra indicadores e gráficos. No assistente, você faz uma pergunta, como “por que o ticket médio está alto?”, e a IA escolhe um conjunto de indicadores e gráficos relacionados. Você não precisa pedir um gráfico específico.
 
-Hoje existem quatro tipos de análise: vendas, ticket médio, margem bruta e produtos. Os gráficos seguem modelos predefinidos. Ainda não há geração livre de qualquer dashboard nem memória entre perguntas.
+Hoje existem quatro tipos de análise: vendas, ticket médio, margem bruta e produtos. A IA pode escolher até três gráficos e quatro indicadores permitidos para cada pergunta. O chat considera as últimas quatro trocas e os filtros da análise anterior; os gráficos são opcionais.
 
 É um protótipo local para aprendizado e portfólio. As visualizações ainda precisam de refinamento; não é uma versão pronta para clientes.
 
@@ -78,7 +78,7 @@ Os dados enviados ao provedor incluem a pergunta, filtros, definições e valore
 - Repita a mesma pergunta com outro modelo, mantendo os filtros.
 - Veja se a explicação respeita os números e reconhece quando faltam dados.
 
-Trocar filtros limpa resultados anteriores. Recarregar a página também limpa as respostas. As perguntas são independentes: o assistente ainda não acompanha uma conversa com memória.
+Trocar filtros limpa resultados anteriores. Recarregar a página também limpa as respostas. As últimas quatro trocas ajudam a interpretar perguntas seguintes. Use “Nova conversa” para limpar esse contexto. Ao trocar de provedor, o contexto recente também será enviado ao provedor escolhido.
 
 ## Como os números são calculados
 

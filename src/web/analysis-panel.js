@@ -60,14 +60,14 @@
 
     [min, (max + min) / 2, max].forEach(value => {
       svg.append(svgElement("line", {
-        x1: 100, x2: 600, y1: y(value), y2: y(value), stroke: "#dfe5ee",
+        x1: 100, x2: 600, y1: y(value), y2: y(value), stroke: "var(--border)",
       }));
       const short = new Intl.NumberFormat("pt-BR", {
         notation: "compact", maximumFractionDigits: 1,
       }).format(chart.format === "money" ? value / 100 : value);
       const label = (chart.format === "money" ? "$ " : "") + short + (chart.format === "percent" ? "%" : "");
       svg.append(svgElement("text", {
-        x: 90, y: y(value) + 4, "text-anchor": "end", fill: "#61738c", "font-size": 12,
+        x: 90, y: y(value) + 4, "text-anchor": "end", fill: "var(--muted)", "font-size": 12,
       }, label));
     });
 
@@ -76,7 +76,7 @@
     function flushSegment() {
       if (segment.length) {
         svg.append(svgElement("polyline", {
-          points: segment.join(" "), fill: "none", stroke: "#5078dd", "stroke-width": 3,
+          points: segment.join(" "), fill: "none", stroke: "var(--chart)", "stroke-width": 3,
         }));
       }
       segment = [];
@@ -93,16 +93,16 @@
     points.forEach((point, index) => {
       if (point.value === null) return;
       const dot = svgElement("circle", {
-        cx: x(index), cy: y(point.value), r: 3, fill: "#5078dd",
+        cx: x(index), cy: y(point.value), r: 3, fill: "var(--chart)",
       });
       dot.append(svgElement("title", {}, pointLabel(point.label, chart.dimension) + ": " + formatValue(point.value, chart.format)));
       svg.append(dot);
     });
     if (points.length) {
-      svg.append(svgElement("text", {x: 100, y: 205, fill: "#61738c", "font-size": 12},
+      svg.append(svgElement("text", {x: 100, y: 205, fill: "var(--muted)", "font-size": 12},
         pointLabel(points[0].label, chart.dimension)));
       if (points.length > 1) {
-        svg.append(svgElement("text", {x: 600, y: 205, "text-anchor": "end", fill: "#61738c", "font-size": 12},
+        svg.append(svgElement("text", {x: 600, y: 205, "text-anchor": "end", fill: "var(--muted)", "font-size": 12},
           pointLabel(points.at(-1).label, chart.dimension)));
       }
     }
@@ -166,15 +166,7 @@
   function renderPanel(panel) {
     const container = element("section", "analysis-panel");
     container.append(element("h3", "", panel.title));
-    const filters = panel.filters;
-    const date = value => value ? value.split("-").reverse().join("/") : "sem data";
-    const scope = [
-      date(filters.start_date) + " a " + date(filters.end_date),
-      filters.channel ? labels[filters.channel] || filters.channel : "Todos os canais",
-      filters.category ? labels[filters.category] || filters.category : "Todas as categorias",
-      filters.country ? labels[filters.country] || filters.country : "Todos os países",
-    ];
-    container.append(element("p", "analysis-scope", "Seleção analisada: " + scope.join(" · ")));
+    container.append(renderScope(panel));
 
     const cards = element("div", "analysis-kpis");
     panel.kpis.forEach(kpi => {
@@ -211,5 +203,50 @@
     return container;
   }
 
+
+  function renderScope(panel) {
+    const filters = panel.filters;
+    const date = value => value ? value.split("-").reverse().join("/") : "sem data";
+    const scope = [
+      date(filters.start_date) + " a " + date(filters.end_date),
+      filters.channel ? labels[filters.channel] || filters.channel : "Todos os canais",
+      filters.category ? labels[filters.category] || filters.category : "Todas as categorias",
+      filters.country ? labels[filters.country] || filters.country : "Todos os países",
+    ];
+    return element("p", "analysis-scope", "Seleção analisada: " + scope.join(" · "));
+
+  }
+
+  let panelSequence = 0;
+
+  function renderOptionalPanel(panel) {
+    const container = element("div", "optional-analysis");
+    // Keep interpreted filters visible even when the charts are collapsed.
+    container.append(renderScope(panel));
+    if (panel.empty || !panel.charts.length) return container;
+
+    const toggle = element("button", "secondary", "Ver gráficos desta análise");
+    toggle.type = "button";
+    toggle.setAttribute("aria-expanded", "false");
+    const content = element("div");
+    content.id = "optional-panel-" + (++panelSequence);
+    content.hidden = true;
+    toggle.setAttribute("aria-controls", content.id);
+    let rendered = false;
+
+    toggle.addEventListener("click", () => {
+      if (!rendered) {
+        content.append(renderPanel(panel));
+        rendered = true;
+      }
+      content.hidden = !content.hidden;
+      toggle.setAttribute("aria-expanded", String(!content.hidden));
+      toggle.textContent = content.hidden ? "Ver gráficos desta análise" : "Ocultar gráficos";
+    });
+    container.append(toggle, content);
+    return container;
+  }
+
   window.renderAnalysisPanel = renderPanel;
+  window.renderOptionalAnalysisPanel = renderOptionalPanel;
 })();
