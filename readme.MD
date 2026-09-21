@@ -1,178 +1,78 @@
-<div align="center">
-
 # DataPilot
 
-### BI & AI Copilot for trustworthy business insights
+A learning and portfolio project combining a standalone analytics portal with an AI assistant for business questions.
 
-[![Status](https://img.shields.io/badge/status-initial_development-F2C94C?style=for-the-badge)](#roadmap)
-[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Qlik](https://img.shields.io/badge/Qlik_Sense-009845?style=for-the-badge&logo=qlik&logoColor=white)](https://www.qlik.com/)
+**Status: local prototype.** The interface is in Brazilian Portuguese and runs outside Qlik Sense. Visual design and the analysis experience still need refinement.
 
-A personal portfolio project that connects data engineering, analytics, APIs, BI and generative AI in one end-to-end solution.
+**Guides:** [Português](docs/prototype.pt-BR.md) · [English](docs/prototype.md) · [Technical analysis flow](docs/business-analysis.md)
 
-</div>
+## What works today
 
-> [!IMPORTANT]
-> The LLM does not calculate business metrics. **SQL/Python is the source of truth; the LLM interprets and explains validated results.**
+- Validated loading of six CSV datasets into SQLite.
+- A web overview with filters, sales KPIs and charts.
+- Business questions mapped to approved panels for sales, average order value, gross margin and products.
+- SQL/Python calculates the values; an optional AI provider selects the analysis plan and explains the results.
+- Configurable providers and models, including Gemini, DeepSeek, OpenAI and compatible endpoints.
+- A calculated panel remains available if its AI explanation fails.
 
-## Project status
+The customer asks a business question, rather than specifying chart types. Current panels use predefined layouts; unrestricted dashboard generation and conversation memory are not implemented.
 
-| Item | Current state |
-|---|---|
-| Phase | Initial development |
-| Current sprint | Sprint 1 — Data Foundation |
-| Current task | Initial source data review completed; relational modeling next |
-| Method | Lightweight Scrum — 1-week sprints |
-| Weekly dedication | Approximately 2–4 hours |
-| Development | Renan + ChatGPT |
+## Run locally
 
-The initial Sales ETL and source data review are complete. The database, API, dashboards and AI features below remain planned.
-
-## Vision
-
-Traditional dashboards are excellent for monitoring metrics, but users still need to interpret charts, investigate changes and translate data into decisions. DataPilot explores a complementary workflow:
-
-```text
-PostgreSQL → Python/FastAPI → Analytics → AI → Qlik Sense
-```
-
-The platform will centralize trusted business data, expose validated metrics through an API, visualize them in Qlik Sense and use an AI copilot to explain results in natural language.
-
-## Core principles
-
-- Business rules remain deterministic and auditable in SQL/Python.
-- The AI layer receives validated metrics instead of calculating them.
-- Each layer can evolve independently.
-- The LLM provider is configurable through environment variables.
-- Tests, documentation and reproducibility are part of the project—not afterthoughts.
-
-## Planned architecture
-
-```mermaid
-flowchart LR
-    A[Source files] --> B[ETL with Python]
-    B --> C[(PostgreSQL)]
-    C --> D[FastAPI Analytics API]
-    D --> E[AI Copilot]
-    C --> F[Qlik Sense]
-    D --> F
-```
-
-## Planned technology stack
-
-| Area | Technologies |
-|---|---|
-| Data and ETL | Python, Pandas, SQL |
-| Database | PostgreSQL |
-| API | FastAPI, SQLAlchemy, Pydantic |
-| BI | Qlik Sense |
-| AI | Provider-agnostic integration via `.env` |
-| Quality | Pytest |
-| Infrastructure | Docker |
-| Version control | Git and GitHub |
-
-The AI integration is designed to support providers such as Gemini, Groq or DeepSeek without coupling the business logic to one vendor.
-
-## Roadmap
-
-- [ ] **Sprint 1 — Data Foundation:** define the business scenario, source data and relational model
-- [ ] **Sprint 2 — ETL + Qlik:** build the ingestion pipeline and initial dashboard
-- [ ] **Sprint 3 — Analytics API:** expose validated KPIs through FastAPI — **no AI yet**
-- [ ] **Sprint 4 — AI Copilot:** add natural-language interpretation over trusted API results
-- [ ] **Sprint 5 — Automated Insights:** generate proactive, explainable business observations
-
-## Repository structure
-
-Current repository layout:
-
-```text
-DataPilot/
-|-- data/
-|   |-- raw/                    # original source CSVs
-|   `-- processed/              # transformed Sales CSV
-|-- scripts/                    # data inspection and validation scripts
-|-- sql/                        # reserved for database definitions
-|-- src/
-|   `-- etl/transform_sales.py   # Sales transformation
-|-- tests/                      # reserved for automated tests
-|-- AGENTS.md                   # collaboration preferences
-`-- readme.MD
-```
-
-## Current progress
-
-- [x] Inspect all six source CSVs.
-- [x] Convert Sales monetary values, discount percentages and date keys.
-- [x] Save the transformed Sales dataset to `data/processed/sales.csv`.
-- [x] Review Sales row counts, keys, dates and all five monetary columns.
-- [x] Check discount conversion during development, including nonzero examples.
-- [ ] Define the relational model and SQL schema.
-
-### Source data review
-
-| Dataset | Initial findings | Action |
-|---|---|---|
-| Sales | Monetary values and percentages stored as text; dates stored as numeric keys | Convert values and save a processed CSV |
-| Product | Numeric costs and prices; unique, non-null ProductKey; 56 missing colors and 102 repeated SKU occurrences beyond the first | Preserve source values; no cleanup identified |
-| Customer | 18,485 rows; unique, non-null CustomerKey; missing attributes only on the -1 record | Preserve the special record |
-| Reseller | 702 rows; unique, non-null ResellerKey; missing attributes only on the -1 record | Preserve the special record |
-| Sales-Territory | 11 rows; unique, non-null SalesTerritoryKey; no missing values | No cleanup identified |
-| Sales-Order | 121,253 rows; unique, non-null SalesOrderLineKey; no missing values | No cleanup identified |
-
-These are initial inspection findings, not a complete validation of business rules or relationships. Missing colors and repeated SKUs were preserved. The meaning of the Customer and Reseller `-1` records still needs to be documented from the source context.
-
-## Data model outline
-
-Sales is the fact table: each row represents a sales order item identified by `SalesOrderLineKey`.
-
-| Related dataset | Join key in Sales | Intended relationship |
-|---|---|---|
-| Product | ProductKey | Many sales items to one product record |
-| Customer | CustomerKey | Many sales items to one customer record |
-| Reseller | ResellerKey | Many sales items to one reseller record |
-| Sales-Territory | SalesTerritoryKey | Many sales items to one territory |
-| Sales-Order | SalesOrderLineKey | One order item to one order detail record |
-
-This outline will guide the SQL schema. Calendar is deferred to a later step.
-
-## Local development
-
-Run from the project root in PowerShell, using the existing virtual environment with pandas installed:
+From the repository root in PowerShell:
 
 ```powershell
-# Inspect all original CSVs
-.\.venv\Scripts\python.exe scripts/inspect_all_date.py
-
-# Inspect Product
-.\.venv\Scripts\python.exe scripts/inspect_product.py
-
-# Transform and save Sales
-.\.venv\Scripts\python.exe src/etl/transform_sales.py
-
-# Review the saved Sales dataset against the original
-.\.venv\Scripts\python.exe scripts/check_sales.py
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m src.etl.build_database
+.\.venv\Scripts\python.exe -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-The transformation preserves the original files and overwrites only `data/processed/sales.csv`. It removes currency symbols and thousands separators, converts percentages to fractions, and converts date keys to dates. Missing or invalid dates become missing values. Dates are saved as `YYYY-MM-DD`; CSV files do not retain pandas data types.
+Create the virtual environment only if it does not exist. Open http://127.0.0.1:8000.
+Stop the server before rebuilding the database on Windows.
 
-The current validation script prints row counts, missing and repeated keys, key order preservation, date checks and monetary differences. Results require review; the script does not yet enforce assertions. Discount checks were run during development but are not currently included in the saved script.
+AI is optional: copy [.env.example](.env.example) to `.env`, configure credentials and model IDs locally, and restart the server. Never commit credentials. See the guides for setup and limitations.
 
-## Next steps
+## How it fits together
 
-1. Document table grain, keys and relationships, then define the PostgreSQL schema in `sql/`.
-2. Prepare a reproducible database setup and load the reviewed datasets.
-3. Check relationships and reconcile row counts after loading.
-4. Add the discount checks to the saved validation script and standardize existing code identifiers, comments and output messages in English.
-5. Build initial SQL metrics and the first Qlik dashboard once the data foundation is ready.
+```text
+Source CSVs -> validated Python load -> SQLite -> FastAPI -> web portal
+                                                   |
+Business question -> approved AI plan -> calculated KPIs/charts -> AI explanation
+```
 
-The next session starts with the relational model. Calendar and AI integration remain later steps.
+| Location | Responsibility |
+|---|---|
+| `src/etl/build_database.py` | Validate and load original CSVs |
+| `sql/schema.sql` | Relational tables, constraints and sales view |
+| `src/api/` | HTTP routes and analysis orchestration |
+| `src/analytics/` | Approved metrics, queries and panel recipes |
+| `src/ai/` | Provider requests and validated analysis plans |
+| `src/web/` | Portuguese interface and chart rendering |
+| `tests/` | Data, API and mocked AI regression tests |
+| `docs/` | Setup, metric definitions and known limitations |
 
-## Project language
+SQLite supports the current local setup. PostgreSQL is a planned migration, not a current dependency. The older `transform_sales.py` script is separate from the prototype database load.
 
-README content, code identifiers, comments and console messages should be written in English. Existing scripts still contain some Portuguese text and will be standardized as they are updated. Learning discussions can remain in Portuguese.
+## Correctness and limits
 
-## Author
+Orders count distinct sales orders, not rows. Average order value uses selected revenue divided by distinct selected orders. Gross profit subtracts product cost and is not net profit. Source currency has not been identified beyond its dollar symbol.
 
-Built as a learning and portfolio project by [Renan Marques](https://github.com/Renanmrqs), combining his studies in software development with practical experience in BI, data and Qlik Sense.
+The loader checks keys, relationships, dates and monetary values, then reconciles totals before replacing the database. AI uses validated aggregates and cannot execute arbitrary SQL; it can still misunderstand a question or invent a textual explanation.
+
+```powershell
+.\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
+```
+
+Automated provider tests use mocks. A live Gemini analysis completed after a transient service failure; that does not establish reliability across providers or questions.
+
+This is a single-user local prototype without authentication or production deployment. Supported data covers sales-related questions, not every department. Each question is independent. A supported analysis normally has two AI stages; a transient failure can trigger one retry per stage. Provider usage and account limits apply.
+
+## Next refinement
+
+1. Improve chart readability, labels, spacing and the visual hierarchy of the portal.
+2. Refine how questions, answers and related panels fit together.
+3. Evaluate representative questions across configured providers against the calculated values.
+4. Keep changes small, understandable and verifiable before expanding the supported data.
+
+The product direction is **chat + an analytics portal outside BI**, sharing the same validated metric layer.

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DataPilot | Visão geral de vendas</title><link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/analysis-panel.css">
+<script src="/static/analysis-panel.js" defer></script>
+<script src="/static/app.js" defer></script></head>
+<body>
+<header><a class="brand" href="/">◈ DataPilot</a><span class="badge">PROTÓTIPO LOCAL</span></header>
+<main>
+<div class="heading"><div><p class="eyebrow">DESEMPENHO DO NEGÓCIO</p><h1>Visão geral de vendas</h1><p class="muted">Explore suas vendas e entenda os resultados.</p></div><a class="api" href="#quality-details">Sobre os dados ↓</a></div>
+<form id="filters">
+<label>De<input id="start" name="start_date" type="date" required></label>
+<label>Até<input id="end" name="end_date" type="date" required></label>
+<label>Canal<select id="channel" name="channel"><option value="">Todos os canais</option></select></label>
+<label>Categoria<select id="category" name="category"><option value="">Todas as categorias</option></select></label>
+<button id="apply" type="submit">Aplicar filtros</button><button class="secondary" type="button" id="reset">Limpar filtros</button>
+</form>
+<p id="status" role="status" aria-live="polite">Carregando dados de vendas…</p>
+<section id="results" hidden>
+<div class="metrics">
+<article><p>Receita de vendas</p><strong id="revenue"></strong><small>Valor registrado nas vendas</small></article>
+<article><p>Pedidos</p><strong id="orders"></strong><small>Pedidos distintos na seleção</small></article>
+<article><p>Valor médio por pedido</p><strong id="average"></strong><small>Receita selecionada / pedidos</small></article>
+<article><p>Margem bruta</p><strong id="margin"></strong><small>Após os custos dos produtos</small></article>
+</div>
+<div class="charts">
+<section class="panel"><h2>Evolução da receita</h2><p class="muted">Totais mensais · datas dos pedidos selecionados</p><div id="trend" class="trend"></div><details><summary>Ver valores mensais</summary><table><thead><tr><th>Mês</th><th>Receita</th></tr></thead><tbody id="monthly-table"></tbody></table></details></section>
+<section class="panel"><h2>Desempenho por categoria</h2><p class="muted">Contribuição para a receita</p><div id="categories"></div></section>
+</div>
+<section class="panel notes"><h2>O que esta seleção mostra</h2><p id="observation"></p><p class="muted">Resumo calculado com os dados desta seleção. Use o assistente abaixo para obter uma interpretação com IA.</p></section>
+<section class="panel copilot"><h2>Assistente de IA</h2><p class="muted">Faça uma pergunta sobre vendas, ticket médio, margem ou produtos. O assistente organiza os indicadores e gráficos úteis para investigar.</p>
+<form id="copilot-form">
+<label>Provedor<select id="provider"></select></label>
+<label>Modelo<select id="model"></select></label>
+<label class="question">Pergunta<textarea id="question" rows="2" maxlength="2000" required>Por que o ticket médio está tão alto nesta seleção?</textarea></label>
+<button id="ask" type="submit" disabled>Analisar pergunta</button>
+</form>
+<p class="muted">A análise tem duas etapas: entender a pergunta e interpretar os indicadores agregados. Falhas temporárias podem gerar uma nova tentativa por etapa. As respostas ficam nesta página até você alterar os filtros ou recarregá-la.</p>
+<p id="ai-status" role="status" aria-live="polite">Carregando configuração dos provedores…</p>
+<div id="answers"></div>
+</section>
+</section>
+<details class="quality" id="quality-details"><summary>Qualidade dos dados e definição dos indicadores</summary><p id="quality"></p><ul><li>Receita = valor de venda registrado na base; resultado bruto = receita − custo total dos produtos. A base não contém despesas operacionais.</li><li>Os valores monetários são armazenados e somados em centavos inteiros. O símbolo “$” vem da base original; a moeda ainda não foi confirmada.</li><li>Os filtros usam a data do pedido e incluem o primeiro e o último dia do período. O primeiro e o último mês podem estar incompletos. Meses sem vendas na seleção não são exibidos.</li><li>Ao filtrar uma categoria, o valor médio por pedido considera apenas a receita dessa categoria e os pedidos que contêm itens dela.</li><li>Datas de envio ausentes e chaves especiais de clientes e revendedores foram preservadas. O significado desses registros ainda está em análise.</li></ul></details>
+<footer>DataPilot · Base de exemplo de vendas · Demonstração local</footer>
+</main></body></html>
