@@ -25,7 +25,7 @@ Stop the server before rebuilding the database, to avoid file locks on Windows.
 `Original CSVs -> validated Python load -> SQLite -> FastAPI -> local HTML/CSS/JavaScript dashboard`
 
 The first demonstration must run outside Qlik. SQLite allows a local prototype without a database service.
-PostgreSQL remains a future migration; this version is a local, single-user demonstration, with no authentication or deployment setup.
+PostgreSQL is not a required migration. This remains a local, single-user demonstration, with no authentication or deployment setup. The next priority is reusable access to QVDs already prepared in Qlik Sense. QVD ingestion and per-client configuration are not implemented; see the [development plan](desenvolvimento.pt-BR.md).
 The overview covers fixed sales questions. The assistant now selects approved topic panels from business questions; see [business-question analysis](business-analysis.md). The planner now selects allowlisted charts per question and receives the last four exchanges; see [conversational analysis](conversation.md). Arbitrary chart generation remains outside the scope.
 
 Implemented:
@@ -117,6 +117,8 @@ For each provider, set its `*_API_KEY` and comma-separated `*_MODELS` list.
 Use exact model IDs available to your account. Restart the server after changes.
 The model list is user-configured, not fetched automatically.
 
+If the interface still reports an unconfigured provider, check that both key and model list are populated, restart the process serving port 8000 and refresh the page. `/api/providers` reports loaded configuration without returning keys. `configured: true` confirms required fields, not credential validity or model availability; those require a live request. A successful dashboard HTTP response does not prove AI readiness.
+
 Example configuration shape (replace placeholders locally):
 
 ```dotenv
@@ -136,7 +138,7 @@ Responses remain in the page with provider, model, latency and a context identif
 Changing filters clears responses; reloading the page clears the comparison.
 The server rebuilds metrics for every question rather than accepting client-provided totals.
 The context identifier hashes the supplied metrics, not the question, and helps identify equivalent data inputs.
-The request sends only the question, aggregate metrics, filters and metric definitions.
+Requests send the question, recent history, filters, available analysis options and the aggregates and definitions needed for each stage.
 No CSV upload, customer names, repository files or planning documents are sent.
 
 Provider requests occur only when the user clicks Analisar pergunta and can incur provider charges.
@@ -145,7 +147,7 @@ Timeouts, missing configuration, invalid models and upstream errors have explici
 The model is instructed to preserve values and avoid invented causes; this is not a guarantee.
 Compare each live response against the visible metrics before relying on it.
 
-Automated AI tests use HTTP mocks, not live model calls. A live Gemini business-question analysis completed after recovering from one HTTP 503. Broader compatibility and factual quality still need evaluation.
+Automated AI tests use HTTP mocks, not live model calls. A live Gemini business-question analysis completed after recovering from one HTTP 503. On 2026-09-30, the user also approved live gross-margin, Bikes and Accessories examples with contextual answers and charts. Broader compatibility and factual quality still need evaluation. See the [checkup](checkup-2026-09-30.md) and [test guide](../tests/README.md).
 
 A supported question normally uses two AI stages: planning and explanation. Selected transient server failures allow one retry per stage; rate-limit responses are not automatically retried. An incomplete explanation is reported as unavailable while the calculated panel remains visible.
 

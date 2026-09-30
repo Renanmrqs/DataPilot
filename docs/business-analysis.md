@@ -11,7 +11,7 @@ It is an extensible starting point, not support for every department or arbitrar
 
 ## Request flow
 
-1. The browser sends the question, selected provider/model and current filters to `POST /api/analysis`.
+1. The browser sends the question, selected provider/model, current filters, recent history and previous analysis filters to `POST /api/analysis`.
 2. The first model call selects a topic, breakdown and optional explicit filter overrides.
 3. Pydantic validates that plan. It cannot contain SQL, custom metrics or executable code.
 4. Python runs approved, parameterized SQL and builds the panel.
@@ -48,7 +48,7 @@ The page's assistant form now uses `/api/analysis`.
 | Products | Units, revenue, distinct products sold | Monthly units, revenue by dimension, up to 10 products by revenue or units |
 
 Available breakdowns: category, channel and country.
-The model chooses the main topic and useful breakdown. Chart types are determined by the layout.
+These layouts are fallback recipes. The planner can explicitly choose zero to three allowlisted charts and zero to four KPIs. Chart dimensions also include month and product.
 
 ## Example questions
 
@@ -83,7 +83,7 @@ Monthly charts can include partial months and omit months without matching sales
 ## Current boundaries
 
 - One primary topic per request. Multi-topic questions should ask which to start with.
-- Each request stands alone; previous conversation context is not sent.
+- Up to four recent exchanges and previous analysis filters provide context. Historical text is untrusted; every request recalculates its metrics.
 - Stock, payroll, expenses, budgets and net profit are not present.
 - Product-level filters and calculated previous-period comparisons are not implemented.
 - Questions requiring unsupported data or filters should explain the limitation.
@@ -107,3 +107,9 @@ This is a ceiling, not a fixed token charge. Explanations are requested in at mo
 Truncated explanations are not presented as complete.
 A live Gemini end-to-end ticket analysis subsequently completed: the explanation recovered from one HTTP 503,
 returned finish_reason=stop and preserved the calculated panel. Service availability can still vary.
+
+On 2026-09-30, the user approved live examples of gross margin, Bikes and Accessories with contextual responses and charts. See the [checkup](checkup-2026-09-30.md) for evidence and remaining narrative issues.
+
+## Reuse direction
+
+Preserve the planner, calculated response contract and renderer while separating access to the demonstration dataset. The intended source is QVDs already transformed in Qlik Sense. Field mappings, relationships and application measures must be explicit. QVD ingestion and configurable datasets are not implemented; no PostgreSQL migration is required. See the [development plan](desenvolvimento.pt-BR.md).

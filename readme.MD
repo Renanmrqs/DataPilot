@@ -6,6 +6,8 @@ Projeto de aprendizado e portfólio que combina um portal de análise independen
 
 **Estado atual: protótipo local.** A interface está em português brasileiro e funciona fora do Qlik Sense. O visual e a experiência de análise ainda precisam de refinamento.
 
+**Para acompanhar o código:** [Entendendo o desenvolvimento e as próximas entregas](docs/desenvolvimento.pt-BR.md).
+
 **Guias:** [Protótipo em português](docs/prototype.pt-BR.md) · [Protótipo em inglês](docs/prototype.md) · [Fluxo técnico da análise — em inglês](docs/business-analysis.md)
 
 ## O que funciona hoje
@@ -62,7 +64,7 @@ A API coordena esse fluxo, consultando o banco para calcular os valores usados n
 | `tests/` | Verificar dados, API e integração com respostas de IA simuladas |
 | `docs/` | Documentar configuração, métricas e limitações conhecidas |
 
-O SQLite atende à execução local atual. A migração para PostgreSQL está planejada. O script antigo `transform_sales.py` é separado do carregamento do banco usado pelo protótipo.
+O SQLite atende à execução local atual. PostgreSQL não é uma migração obrigatória nem uma próxima entrega definida. O script antigo `transform_sales.py` é separado do carregamento do banco usado pelo protótipo.
 
 ## Validação e limites
 
@@ -80,11 +82,15 @@ Os testes automatizados dos provedores usam respostas simuladas. Uma análise re
 
 Este é um protótipo local para um usuário, sem autenticação ou configuração de produção. A base atual cobre perguntas relacionadas a vendas. A conversa mantém contexto recente na memória do navegador. Uma análise suportada normalmente usa duas etapas de IA; uma falha temporária pode gerar uma nova tentativa por etapa. O uso está sujeito aos custos e limites da conta no provedor.
 
-## Próximos refinamentos
+## Próximos passos: reutilizar QVDs tratados
 
-1. Melhorar a legibilidade dos gráficos, os rótulos, os espaçamentos e a organização visual do portal.
-2. Refinar como perguntas, respostas e painéis relacionados aparecem juntos.
-3. Comparar perguntas representativas entre os provedores configurados, conferindo as respostas com os valores calculados.
-4. Manter as mudanças pequenas, compreensíveis e verificáveis antes de ampliar os dados suportados.
+1. Separar o acesso aos dados do planejamento, cálculo e apresentação das análises.
+2. Configurar campos, chaves, relacionamentos e métricas por conjunto de dados.
+3. Validar a reutilização com uma segunda base de teste já tratada, preservando chat e gráficos.
+4. Avaliar a leitura dos QVDs e reconciliar os indicadores com o aplicativo Qlik antes do piloto real.
 
-A direção do produto é **chat + portal de análise fora do BI**, compartilhando as mesmas definições e cálculos validados de métricas.
+A direção acordada é **fontes → tratamento no Qlik Sense → QVDs tratados → DataPilot → painel + IA**. O tratamento de negócio permanece no Qlik. Medidas definidas no aplicativo precisam ser mapeadas; ler QVD não reproduz automaticamente expressões e associações do Qlik.
+
+A implementação ainda usa CSV/SQLite. Leitura QVD, configuração por cliente e isolamento entre clientes não estão implementados. PostgreSQL e DuckDB não foram escolhidos como destino obrigatório.
+
+Em 30/09/2026, o usuário aprovou exemplos reais de margem bruta, bicicletas e acessórios, com continuidade da conversa e gráficos. Isso valida a experiência observada, não todas as afirmações da IA. Consulte o [checkup](docs/checkup-2026-09-30.md), o [plano de desenvolvimento](docs/desenvolvimento.pt-BR.md) e o [guia dos testes](tests/README.md).

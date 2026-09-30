@@ -223,7 +223,13 @@
     const container = element("div", "optional-analysis");
     // Keep interpreted filters visible even when the charts are collapsed.
     container.append(renderScope(panel));
-    if (panel.empty || !panel.charts.length) return container;
+    if (panel.empty) return container;
+    // A chartless answer can still contain calculated KPIs, including when
+    // the provider fails to explain the results. Keep those values accessible.
+    if (!panel.charts.length) {
+      if (panel.kpis.length) return renderPanel(panel);
+      return container;
+    }
 
     const toggle = element("button", "secondary", "Ver gráficos desta análise");
     toggle.type = "button";

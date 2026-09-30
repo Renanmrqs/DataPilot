@@ -244,3 +244,62 @@ class AnalysisTests(unittest.TestCase):
         ):
             with self.assertRaises(ValueError):
                 AnalysisPlan(topic="sales", charts=[spec])
+
+    def test_margin_bikes_accessories_conversation_recalculates_each_selection(self):
+        """Reproduce the reported conversation using independent known values.
+
+        Plans are mocked: this checks orchestration, not model understanding.
+        The same order contains Bike and Helmet items, so category ticket values
+        must exclude the other category's share of that order.
+        """
+        history = []
+        previous_filters = None
+        cases = (
+            ("Como calcula a margem?", {"topic": "margin"}, None, 20000, 12000, 2, 4),
+            ("Detalhe bicicletas", {"topic": "products", "filters": {"category": "Bikes"}},
+             "Bikes", 18000, 11000, 2, 2),
+            ("Por que acessórios são baixos?", {"topic": "sales", "filters": {"category": "Accessories"}},
+             "Accessories", 2000, 1000, 1, 2),
+        )
+        for question, spec, category, revenue, cost, orders, units in cases:
+            with self.subTest(category=category):
+                body = {**self.request, "question": question, "history": history,
+                        "start_date": "2024-01-01", "end_date": "2024-02-29"}
+                if previous_filters is not None:
+                    body["analysis_filters"] = previous_filters
+                with patch("src.api.analysis.select_analysis", return_value=(AnalysisPlan(**spec), 1)) as planner, patch(
+                    "src.api.analysis.explain", return_value={"answer": "Resposta simulada.", "elapsed_ms": 1}
+                ) as explain:
+                    response = self.client.post("/api/analysis", json=body)
+                self.assertEqual(response.status_code, 200)
+                result = response.json()
+                self.assertEqual(result["status"], "complete")
+                self.assertEqual(planner.call_args.kwargs["history"], history)
+                if previous_filters is not None:
+                    self.assertEqual(planner.call_args.args[3]["category"], previous_filters["category"])
+                summary = explain.call_args.args[3]["summary"]
+                self.assertEqual(summary["revenue_cents"], revenue)
+                self.assertEqual(summary["cost_cents"], cost)
+                self.assertEqual(summary["orders"], orders)
+                self.assertEqual(summary["units"], units)
+                self.assertEqual(summary["gross_profit_cents"], revenue - cost)
+                self.assertAlmostEqual(summary["gross_margin_pct"], (revenue - cost) / revenue * 100)
+                self.assertEqual(summary["average_order_value_cents"], revenue / orders)
+                previous_filters = result["panel"]["filters"]
+                self.assertEqual(previous_filters["category"], category)
+                self.assertEqual(previous_filters["start_date"], "2024-01-01")
+                self.assertEqual(previous_filters["end_date"], "2024-02-29")
+                history = history + [{"role": "user", "content": question},
+                                     {"role": "assistant", "content": result["answer"]}]
+
+    def test_partial_chartless_result_preserves_calculated_kpis(self):
+        plan = AnalysisPlan(topic="margin", charts=[], kpis=["gross_profit_cents", "gross_margin_pct"])
+        with patch("src.api.analysis.select_analysis", return_value=(plan, 1)), patch(
+            "src.api.analysis.explain", side_effect=HTTPException(502, "Serviço indisponível.")
+        ):
+            response = self.client.post("/api/analysis", json=self.request)
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertEqual(result["status"], "partial")
+        self.assertEqual(result["panel"]["charts"], [])
+        self.assertEqual([kpi["value"] for kpi in result["panel"]["kpis"]], [8000, 40])

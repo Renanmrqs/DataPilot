@@ -54,7 +54,7 @@ Business question -> approved AI plan -> calculated KPIs/charts -> AI explanatio
 | `tests/` | Data, API and mocked AI regression tests |
 | `docs/` | Setup, metric definitions and known limitations |
 
-SQLite supports the current local setup. PostgreSQL is a planned migration, not a current dependency. The older `transform_sales.py` script is separate from the prototype database load.
+SQLite supports the current local setup. PostgreSQL is not a required migration or a committed next step. The older `transform_sales.py` script is separate from the prototype database load.
 
 ## Correctness and limits
 
@@ -70,11 +70,15 @@ Automated provider tests use mocks. A live Gemini analysis completed after a tra
 
 This is a single-user local prototype without authentication or production deployment. Supported data covers sales-related questions, not every department. Recent conversation context is kept in browser memory. A supported analysis normally has two AI stages; a transient failure can trigger one retry per stage. Provider usage and account limits apply.
 
-## Next refinement
+## Next steps: reuse prepared QVDs
 
-1. Improve chart readability, labels, spacing and the visual hierarchy of the portal.
-2. Refine how questions, answers and related panels fit together.
-3. Evaluate representative questions across configured providers against the calculated values.
-4. Keep changes small, understandable and verifiable before expanding the supported data.
+1. Separate data access from analysis planning, calculation and rendering.
+2. Configure fields, keys, relationships and metrics per dataset.
+3. Prove reuse with a second prepared test dataset, preserving chat and charts.
+4. Evaluate QVD ingestion and reconcile metrics against the Qlik application before a real-client pilot.
 
-The product direction is **chat + an analytics portal outside BI**, sharing the same validated metric layer.
+The agreed direction is **sources → transformations in Qlik Sense → prepared QVDs → DataPilot → dashboard + AI**. Business transformations remain in Qlik. Application measures must be mapped; QVD ingestion does not automatically reproduce Qlik expressions or associations.
+
+The implementation still uses CSV/SQLite. QVD ingestion, per-client configuration and client isolation are not implemented. Neither PostgreSQL nor DuckDB is a mandatory destination.
+
+On 2026-09-30, the user approved live examples covering gross margin, Bikes and Accessories, with contextual answers and charts. This validates those interactions, not general model accuracy. See the [checkup](docs/checkup-2026-09-30.md), [development plan](docs/desenvolvimento.pt-BR.md) and [test guide](tests/README.md), in Portuguese.

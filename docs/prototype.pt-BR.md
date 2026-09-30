@@ -54,6 +54,8 @@ Gemini, DeepSeek e OpenAI possuem endereços predefinidos. Para outro serviço c
 
 A chave fica no servidor. Não coloque a chave no HTML e não envie o arquivo `.env` para o GitHub. O painel de dados funciona sem IA configurada.
 
+Se a interface mostrar “não configurado” mesmo após preencher o `.env`, confira se chave e lista de modelos estão preenchidas, reinicie o processo que atende a porta 8000 e atualize a página. `/api/providers` informa a configuração carregada sem retornar chaves. `configured: true` confirma os campos necessários, não a validade da credencial ou a disponibilidade do modelo; isso depende de uma chamada real. Um HTTP 200 do painel também não confirma que a IA está pronta.
+
 Uma pergunta suportada normalmente usa duas etapas de IA: escolher o plano e explicar os resultados. Algumas falhas temporárias permitem uma nova tentativa por etapa, chegando a quatro chamadas. Respostas de limite atingido não são repetidas automaticamente. Custos e cotas dependem da sua conta.
 
 ## O que acontece depois da pergunta
@@ -66,7 +68,7 @@ Uma pergunta suportada normalmente usa duas etapas de IA: escolher o plano e exp
 
 A IA não escreve nem executa SQL livremente. Se a explicação falhar, o painel calculado continua disponível e a interface avisa que a resposta ficou incompleta.
 
-Os dados enviados ao provedor incluem a pergunta, filtros, definições e valores agregados necessários à análise. Não são enviados os CSVs completos, as chaves de API ou os documentos de planejamento.
+Os dados enviados ao provedor incluem a pergunta, histórico recente, filtros, opções de análise, definições e agregados necessários a cada etapa. Não são enviados os CSVs completos, as chaves de API ou os documentos de planejamento.
 
 ## Como testar e comparar
 
@@ -149,8 +151,11 @@ Para entender o fluxo, comece por uma pergunta na interface e acompanhe `src/api
 - A base suporta análises relacionadas a vendas, não todas as áreas da empresa.
 - A IA pode interpretar a pergunta errado ou inventar uma causa. Confira a resposta com os dados.
 - Não há filtros por produto nem comparação calculada com período anterior.
-- Não há autenticação ou configuração para produção. O SQLite atende ao protótipo local; PostgreSQL é uma evolução planejada.
-- A prioridade seguinte é melhorar legibilidade dos gráficos, rótulos, espaçamento e organização visual.
-- Depois, refinar como pergunta, resposta e painel aparecem juntos e comparar modelos com perguntas representativas.
+- Não há autenticação ou configuração para produção. O SQLite atende ao protótipo local; PostgreSQL não é uma migração obrigatória.
+- A prioridade é separar o acesso aos dados e configurar campos, relacionamentos e métricas para reutilizar os QVDs já tratados no Qlik.
+- Validar primeiro com uma segunda base de teste. Leitura QVD e configuração por cliente ainda não estão implementadas.
+- Manter os refinamentos de texto e gráficos como melhorias da experiência existente.
+
+Em 30/09/2026, o usuário aprovou exemplos reais de margem, bicicletas e acessórios com gráficos e continuidade da conversa. Veja as evidências e limitações no [checkup](checkup-2026-09-30.md), os [próximos passos](desenvolvimento.pt-BR.md) e o [guia dos testes](../tests/README.md).
 
 A evolução será feita em etapas pequenas, com explicação do que mudou e uma forma simples de conferir o resultado.
