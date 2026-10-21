@@ -1,5 +1,7 @@
 # DataPilot
 
+**Checkpoint de 20/10/2026:** login da demo confirmado; análise real com IA ainda falhando. [Estado salvo e próximos passos](docs/checkpoint-2026-10-20.md).
+
 **Português** | [English](README.en.md)
 
 Projeto de aprendizado e portfólio que combina um portal de análise independente com um assistente de IA para perguntas sobre o negócio.
@@ -9,6 +11,8 @@ Projeto de aprendizado e portfólio que combina um portal de análise independen
 **Para acompanhar o código:** [Entendendo o desenvolvimento e as próximas entregas](docs/desenvolvimento.pt-BR.md).
 
 **Guias:** [Protótipo em português](docs/prototype.pt-BR.md) · [Protótipo em inglês](docs/prototype.md) · [Fluxo técnico da análise — em inglês](docs/business-analysis.md)
+
+**Demo pública em preparação:** [login por e-mail, quatro perguntas por conta e roteiro para entender a implementação](docs/demo-access.pt-BR.md). A interface e as cotas estão implementadas; deploy ainda precisa de validação. A IA pública permanece pausada por padrão; a configuração local pode habilitá-la para testes.
 
 ## O que funciona hoje
 

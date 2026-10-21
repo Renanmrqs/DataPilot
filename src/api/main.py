@@ -5,11 +5,14 @@ from pathlib import Path
 import sqlite3
 import json
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
+from src.api.deployment import provider_ready, public_settings, require_ai_access
 from pydantic import BaseModel, ConfigDict, Field
 from dotenv import load_dotenv
 from src.ai.copilot import explain, list_providers
 from src.api.analysis import create_analysis_router
+from src.api.demo import router as demo_router
+from src.api.auth import configure_auth_logging, router as auth_router
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -40,6 +43,7 @@ def connect(database):
 
 
 def create_app(database=DATABASE):
+    configure_auth_logging()
     app = FastAPI(title="DataPilot", version="0.1.0")
     app.mount("/static", StaticFiles(directory=ROOT / "src" / "web"), name="static")
 
@@ -104,13 +108,22 @@ def create_app(database=DATABASE):
 
     @app.get("/api/providers")
     def providers():
-        return {"providers": list_providers()}
+        config = public_settings()
+        catalog = list_providers()
+        if config.enabled:
+            catalog = [dict(item, models=[config.model], configured=provider_ready(config))
+                       for item in catalog if item["id"] == config.provider]
+        return {"providers": catalog}
 
     @app.post("/api/copilot")
-    def copilot(request: CopilotRequest):
+    def copilot(request: CopilotRequest, access=Depends(require_ai_access)):
         snapshot = dashboard(request.start_date, request.end_date, request.channel, request.category)
+        if access is not None:
+            access.reserve(request.provider, request.model)
         return explain(request.provider, request.model, request.question, snapshot)
 
+    app.include_router(demo_router)
+    app.include_router(auth_router)
     app.include_router(create_analysis_router(lambda: connect(database)))
     return app
 

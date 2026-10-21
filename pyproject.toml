@@ -1,0 +1,5 @@
+[tool.vercel]
+entrypoint = "src.api.main:app"
+
+[tool.vercel.scripts]
+build = "python -m src.etl.build_database"

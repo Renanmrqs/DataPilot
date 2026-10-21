@@ -13,6 +13,14 @@ Os testes usam bases temporárias e respostas simuladas de provedores. Não exig
 | `test_prototype.py` | Conversão de dinheiro e datas, restrições, métricas, filtros, seleções vazias, API e arquivos estáticos |
 | `test_copilot.py` | Configuração dos provedores, contexto calculado no servidor, erros, limites, novas tentativas e respostas truncadas |
 | `test_analysis.py` | Planos permitidos, cálculos, rankings, histórico, mudança de categoria e preservação do painel quando a explicação falha |
+| `test_deployment.py` | Perfil local e pausa segura das duas rotas de IA na Vercel |
+| `test_demo.py` | Identidade assinada, expiração, seleção pública de modelo, estados de saldo e bloqueios antes da chamada à IA |
+| `test_demo_postgres.py` | Opt-in: persistência real, terceira pergunta, concorrência, teto global, override e rollback em schema temporário |
+| `test_auth_proxy.py` | Troca do código de retorno, cookies no domínio da aplicação, origem, destino fixo, logout e remoção de credenciais dos logs |
+
+Os testes de PostgreSQL são ignorados na execução padrão. A verificação do navegador usa `scripts/check_demo_ui.py` com serviços simulados. Veja o [guia de acesso da demo](../docs/demo-access.pt-BR.md) para executar essas verificações e entender seus limites.
+
+`python -B -m scripts.check_auth_flow` testa o fluxo navegador → API → Neon simulado, com cookies reais e JWT assinado, incluindo a etapa de retorno que faltava na primeira integração. Não envia e-mails reais.
 
 ## Regressões dos exemplos aprovados em 30/09/2026
 

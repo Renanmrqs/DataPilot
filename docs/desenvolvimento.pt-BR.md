@@ -2,6 +2,8 @@
 
 ## Onde estamos
 
+**Retomada após 20/10/2026:** leia primeiro o [checkpoint da demo](checkpoint-2026-10-20.md). Login por e-mail foi confirmado, mas a análise real com Gemini continua falhando no teste do usuário. O limite foi aumentado para quatro perguntas. A prioridade imediata é reproduzir e corrigir essa falha; a demo ainda não está pronta para publicação.
+
 O DataPilot é um protótipo local de um portal de vendas com um assistente de IA. O usuário aprovou a experiência em exemplos reais de margem, bicicletas e acessórios, incluindo continuidade da conversa e gráficos. Os principais agregados desses exemplos foram conferidos no banco durante o [checkup de 30/09/2026](checkup-2026-09-30.md). Isso não equivale a homologação com dados de clientes.
 
 **Direção acordada:** fontes → tratamento no Qlik Sense → QVDs tratados → DataPilot → painel + IA. O tratamento de negócio continua no Qlik; o DataPilot deve consumir sua saída. Hoje a implementação ainda é CSV/SQLite.

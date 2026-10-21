@@ -1,5 +1,9 @@
 # DataPilot
 
+**October 20, 2026 checkpoint:** demo login confirmed; live AI analysis still failing. [Saved state and next steps](docs/checkpoint-2026-10-20.md).
+
+Public demo preparation: [email authentication and persistent question quotas](docs/demo-access.md). UI and quota controls are implemented; real email delivery, browser authentication and Vercel deployment still require validation. Public AI is paused by default.
+
 [Português](readme.MD) | **English**
 
 A learning and portfolio project combining a standalone analytics portal with an AI assistant for business questions.

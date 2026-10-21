@@ -1,5 +1,6 @@
 """Translate a business question into a validated choice of analysis, never SQL."""
 import json
+import logging
 from datetime import date
 from typing import Literal
 
@@ -7,6 +8,9 @@ from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from src.ai.copilot import request_completion
+
+
+logger = logging.getLogger(__name__)
 
 
 class AnalysisFilters(BaseModel):
@@ -109,6 +113,10 @@ def select_analysis(provider, model, question, filters, available_values, histor
             raise ValueError("Incomplete plan")
         plan = AnalysisPlan.model_validate_json(content)
     except (ValidationError, ValueError) as exc:
+        reasons = sorted({item["type"] for item in exc.errors(include_input=False)}) if isinstance(exc, ValidationError) else ["incomplete_plan"]
+        # Keep diagnostics useful without logging questions or model output.
+        logger.warning("Analysis plan rejected: provider=%s model=%s truncated=%s reasons=%s",
+                       provider, model, result["truncated"], ",".join(reasons))
         raise HTTPException(
             502,
             "O modelo não retornou um plano de análise válido. Tente reformular a pergunta ou trocar de modelo.",

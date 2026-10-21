@@ -29,6 +29,20 @@ let conversation = [];
 let conversationFilters = null;
 let conversationVersion = 0;
 
+function updateAskState() {
+  const provider = providers.find(item => item.id === $("provider").value);
+  $("ask").disabled = aiBusy || !currentSnapshot || !provider?.configured
+    || !$("model").value || !window.demoAccess.state.can_ask;
+}
+
+window.addEventListener("demo-access-changed", () => {
+  updateAskState();
+  if (!aiBusy && window.demoAccess.state.mode === "demo") {
+    $("ai-status").textContent = window.demoAccess.state.message;
+  }
+});
+window.addEventListener("demo-identity-changed", clearConversation);
+
 function clearConversation() {
   conversation = [];
   conversationFilters = null;
@@ -148,8 +162,10 @@ function updateModels(rebuild=true) {
       const option=document.createElement("option");option.value=model;option.textContent=model;$("model").append(option);
     });
   }
-  $("ask").disabled=aiBusy || !currentSnapshot || !provider?.configured || !$("model").value;
-  if(!aiBusy) $("ai-status").textContent=provider?.configured
+  updateAskState();
+  if (!aiBusy && window.demoAccess.state.mode === "demo") {
+    $("ai-status").textContent = window.demoAccess.state.message;
+  } else if(!aiBusy) $("ai-status").textContent=provider?.configured
     ? "Pronto. As respostas podem conter erros; confira os indicadores."
     : "Este provedor não está configurado. Adicione a chave e os identificadores dos modelos ao arquivo .env local e reinicie o servidor.";
 }
@@ -163,8 +179,9 @@ $("copilot-form").addEventListener("submit",async event=>{
   if(!question) {$("ai-status").textContent="Digite uma pergunta.";return;}
   aiBusy=true;$("ask").disabled=true;$("ai-status").textContent="Entendendo a pergunta e preparando a análise…";
   try {
+    const accessHeaders = await window.demoAccess.headers();
     const response=await fetch("/api/analysis",{
-      method:"POST",headers:{"Content-Type":"application/json"},
+      method:"POST",headers:{"Content-Type":"application/json", ...accessHeaders},
       body:JSON.stringify({provider:$("provider").value,model:$("model").value,question,...snapshot.filters,history:conversation,analysis_filters:conversationFilters})
     });
     const data=await response.json();
@@ -193,7 +210,12 @@ $("copilot-form").addEventListener("submit",async event=>{
       ? "Painel calculado; a explicação da IA não ficou disponível."
       : "Análise recebida. Você pode fazer outra pergunta ou comparar com outro modelo.";
   } catch(error) {if(currentSnapshot===snapshot && turnVersion===conversationVersion) $("ai-status").textContent=errorMessage(error);}
-  finally {aiBusy=false;$("ask").disabled=!currentSnapshot || !providers.find(item=>item.id===$("provider").value)?.configured;}
+  finally {
+    // Refresh even after failures: the provider may already have consumed quota.
+    await window.demoAccess.refresh();
+    aiBusy=false;
+    updateAskState();
+  }
 });
 (async()=>{
   try {

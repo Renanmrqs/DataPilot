@@ -1,0 +1,29 @@
+.demo-access {
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 7px;
+  background: var(--surface-soft);
+}
+.demo-access-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.demo-access-heading strong { font-size: 15px; color: var(--accent); }
+.demo-badge { font-size: 11px; padding: 5px 9px; border-radius: 20px; background: var(--accent-soft); }
+.demo-access progress { display: block; width: 100%; height: 9px; margin: 14px 0; accent-color: var(--accent); }
+.demo-access-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+#demo-login { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; margin: 16px 0 8px; }
+#demo-message, #demo-email-status { font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.demo-mode .provider-choice, .demo-mode .model-choice { display: none; }
+.demo-mode #copilot-form { grid-template-columns: minmax(0, 1fr) auto; }
+.demo-mode .question { grid-column: 1 / -1; grid-row: auto; }
+.demo-mode #ask { grid-row: auto; }
+@media (max-width: 760px) {
+  #demo-login, .demo-mode #copilot-form { grid-template-columns: minmax(0, 1fr); }
+  .demo-access { padding: 14px; }
+}

@@ -2,6 +2,8 @@
 
 [Versão em português](prototype.pt-BR.md) · [Project overview](../readme.MD)
 
+The public demo access layer is described in [email sign-in and question quotas](demo-access.md). Quota storage has been tested on Neon; real email authentication and hosted deployment still need validation.
+
 ## Run
 
 From the repository root in PowerShell:

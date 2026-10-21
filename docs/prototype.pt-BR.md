@@ -2,6 +2,8 @@
 
 [English version](prototype.md) · [Visão geral do projeto](../readme.MD)
 
+Para revisar o acesso da demo pública, veja o [guia de login por e-mail e cotas por usuário](demo-access.pt-BR.md). Essa integração está implementada, com testes de cotas no Neon; login real e deploy ainda precisam ser validados.
+
 ## O que estamos construindo
 
 Um produto com duas partes conectadas: **um portal de análise fora do BI e um assistente para perguntas sobre o negócio**.

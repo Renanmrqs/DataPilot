@@ -4,8 +4,10 @@
 <script src="/static/theme.js?v=20260921-3"></script>
 <title>DataPilot | Visão geral de vendas</title><link rel="stylesheet" href="/static/style.css?v=20260921-3">
 <link rel="stylesheet" href="/static/analysis-panel.css?v=20260921-3">
+<link rel="stylesheet" href="/static/demo-access.css?v=20261020-1">
 <script src="/static/analysis-panel.js?v=20260921-3" defer></script>
-<script src="/static/app.js?v=20260921-3" defer></script></head>
+<script src="/static/demo-access.js?v=20261020-4" defer></script>
+<script src="/static/app.js?v=20261020-1" defer></script></head>
 <body>
 <header class="topbar">
   <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">D</span> DataPilot</a>
@@ -49,10 +51,23 @@
 </div>
 <section class="panel notes"><h2>O que esta seleção mostra</h2><p id="observation"></p><p class="muted">Resumo calculado com os dados desta seleção. Use o assistente abaixo para obter uma interpretação com IA.</p></section>
 <section class="panel copilot" id="assistant"><p class="eyebrow">EXPLORE SEUS RESULTADOS</p><h2>Converse sobre seus dados</h2><p class="muted">Pergunte sobre vendas, ticket médio, margem ou produtos. Leia a resposta e abra os gráficos se quiser explorar os números.</p>
+<section id="demo-access" class="demo-access" aria-label="Acesso à demonstração" hidden>
+  <div class="demo-access-heading"><strong id="demo-quota">Consultando perguntas disponíveis…</strong><span class="demo-badge">Demonstração gratuita <span id="demo-provider"></span></span></div>
+  <progress id="demo-progress" max="4" value="0" aria-label="Consultando saldo"></progress>
+  <p id="demo-description" class="muted"></p>
+  <p id="demo-message" role="status" aria-live="polite"></p>
+  <form id="demo-login">
+    <label>Seu e-mail<input id="demo-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="voce@exemplo.com" required></label>
+    <button id="demo-email-submit" type="submit">Receber link de acesso</button>
+  </form>
+  <p id="demo-email-status" role="status" aria-live="polite"></p>
+  <div class="demo-access-actions"><button id="demo-refresh" class="secondary" type="button">Já confirmei / atualizar saldo</button><button id="demo-logout" class="secondary" type="button" hidden>Sair</button></div>
+  <p id="demo-policy" class="muted"></p>
+</section>
 <button id="new-conversation" type="button" class="secondary">Nova conversa</button>
 <form id="copilot-form">
-<label>Provedor<select id="provider"></select></label>
-<label>Modelo<select id="model"></select></label>
+<label class="provider-choice">Provedor<select id="provider"></select></label>
+<label class="model-choice">Modelo<select id="model"></select></label>
 <label class="question">Pergunta<textarea id="question" rows="2" maxlength="2000" required>Por que o ticket médio está tão alto nesta seleção?</textarea></label>
 <button id="ask" type="submit" disabled>Enviar pergunta</button>
 </form>
@@ -62,5 +77,5 @@
 </section>
 </section>
 <details class="quality" id="quality-details"><summary>Qualidade dos dados e definição dos indicadores</summary><p id="quality"></p><ul><li>Receita = valor de venda registrado na base; resultado bruto = receita − custo total dos produtos. A base não contém despesas operacionais.</li><li>Os valores monetários são armazenados e somados em centavos inteiros. O símbolo “$” vem da base original; a moeda ainda não foi confirmada.</li><li>Os filtros usam a data do pedido e incluem o primeiro e o último dia do período. O primeiro e o último mês podem estar incompletos. Meses sem vendas na seleção não são exibidos.</li><li>Ao filtrar uma categoria, o valor médio por pedido considera apenas a receita dessa categoria e os pedidos que contêm itens dela.</li><li>Datas de envio ausentes e chaves especiais de clientes e revendedores foram preservadas. O significado desses registros ainda está em análise.</li></ul></details>
-<footer>DataPilot · Base de exemplo de vendas · Demonstração local</footer>
+<footer>DataPilot · Base de exemplo de vendas · Projeto de estudo e portfólio</footer>
 </main></div></body></html>

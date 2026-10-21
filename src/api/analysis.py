@@ -3,7 +3,8 @@ from contextlib import closing
 from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from src.api.deployment import require_ai_access
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.ai.analysis_plan import AnalysisFilters, select_analysis
@@ -36,7 +37,7 @@ def create_analysis_router(open_connection):
     router = APIRouter()
 
     @router.post("/api/analysis")
-    def analyze(request: AnalysisRequest):
+    def analyze(request: AnalysisRequest, access=Depends(require_ai_access)):
         filters = request.model_dump(
             mode="json", exclude={"provider", "model", "question", "history", "analysis_filters"}
         )
@@ -50,6 +51,8 @@ def create_analysis_router(open_connection):
         with closing(open_connection()) as connection:
             options = available_values(connection)
             filter_sql(filters, options)
+        if access is not None:
+            access.reserve(request.provider, request.model)
         plan, planning_ms = select_analysis(
             request.provider, request.model, request.question, filters, options, history=history
         )
