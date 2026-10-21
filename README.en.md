@@ -1,31 +1,57 @@
 # DataPilot
 
-**October 21, 2026 checkpoint:** demo login confirmed and a complete live API analysis validated with Gemini 2.5 Flash. User-browser verification and deployment remain pending. [Diagnosis and next steps](docs/checkpoint-2026-10-21.md).
-
-Public demo preparation: [email authentication and persistent question quotas](docs/demo-access.md). UI and quota controls are implemented; real email delivery, browser authentication and Vercel deployment still require validation. Public AI is paused by default.
-
 [Português](readme.MD) | **English**
 
-A learning and portfolio project combining a standalone analytics portal with an AI assistant for business questions.
+A sales analytics portal with an AI assistant: ask a business question, read the answer, and optionally open charts to explore the numbers.
 
-**Status: local prototype.** The interface is in Brazilian Portuguese and runs outside Qlik Sense. Visual design and the analysis experience still need refinement.
+A personal learning and portfolio project developed with AI assistance. The goal is to build a usable application and understand its engineering decisions, with deterministic metric calculations and documented limitations. The application interface is in Brazilian Portuguese.
 
-**Guides:** [Português](docs/prototype.pt-BR.md) · [English](docs/prototype.md) · [Technical analysis flow](docs/business-analysis.md)
+## Project status
 
-## What works today
+**Working local prototype; deployment validation in progress.**
 
-- Validated loading of six CSV datasets into SQLite.
-- A web overview with filters, sales KPIs and charts.
-- Business questions mapped to approved panels for sales, average order value, gross margin and products.
-- SQL/Python calculates the values; an optional AI provider selects the analysis plan and explains the results.
-- Configurable providers and models, including Gemini, DeepSeek, OpenAI and compatible endpoints.
-- A calculated panel remains available if its AI explanation fails.
+| Component | Status on October 21, 2026 |
+| --- | --- |
+| CSV loading, API, filters, KPIs and charts | Implemented and checked locally |
+| Groq chat with a Qwen model | Answer and charts confirmed locally by the user |
+| Gemini | One complete live API analysis passed, but planning failed again in the browser; unresolved |
+| Email-link login and persistent balance | Validated locally with Neon |
+| Vercel | Build and deployment completed; requesting an access email fails on the deployed site |
 
-The customer asks a business question, rather than specifying chart types. The assistant selects allowlisted charts and KPIs for each question. Optional charts follow the answer; the last four exchanges and previous analysis filters provide conversation context.
+The complete authentication and AI flow on Vercel **has not been validated**. Provider availability and the accuracy of generated explanations are not guaranteed.
+
+## Features
+
+- Sales overview with date, channel and category filters.
+- Revenue, distinct orders, average order value, units, cost and gross margin.
+- Sales, order-value, margin and product questions, with KPIs and charts selected from approved options.
+- Answers shown before optional charts.
+- Context from the last four exchanges and previous analysis filters. **Nova conversa**, filter changes or a reload clear the in-memory history.
+- Calculated panels remain available if the explanation stage fails.
+- Configurable providers and models; server-approved choices in demo mode.
+- Email access, four questions per account by default, a shared daily cap and a per-account cooldown.
+
+## Architecture
+
+```text
+6 CSVs → validated Python load → read-only SQLite
+                                       ↓
+                               FastAPI → web interface
+
+Question → validated AI plan → SQL/Python metrics → AI explanation
+
+Neon Auth → verified identity → Neon PostgreSQL → quota reservation
+```
+
+AI selects an analysis through a validated contract; it cannot execute arbitrary SQL. The application calculates the numbers. Filters, available options and aggregates are sent to the provider as needed for each stage; textual explanations can still be wrong.
+
+SQLite stores the demonstration analytics dataset. Neon PostgreSQL stores authentication data and quotas. Vercel rebuilds SQLite from versioned CSVs during the build; account balances do not depend on local files.
+
+**Stack:** Python, FastAPI, SQLite, PostgreSQL/Neon Auth, HTML, CSS and JavaScript, with Chat Completions-compatible AI APIs.
 
 ## Run locally
 
-From the repository root in PowerShell:
+Requirements: Python 3.12–3.14 and a terminal. From the repository root in PowerShell:
 
 ```powershell
 py -m venv .venv
@@ -34,55 +60,82 @@ py -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-Create the virtual environment only if it does not exist. Open http://127.0.0.1:8000.
-Stop the server before rebuilding the database on Windows.
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Interactive API documentation is available at `/docs`.
 
-AI is optional: copy [.env.example](.env.example) to `.env`, configure credentials and model IDs locally, and restart the server. Never commit credentials. See the guides for setup and limitations.
+Create the virtual environment only if it does not already exist. The dashboard works without an AI provider. Stop the server before rebuilding SQLite on Windows.
 
-## How it fits together
+### Configure AI
 
-```text
-Source CSVs -> validated Python load -> SQLite -> FastAPI -> web portal
-                                                   |
-Business question -> approved AI plan -> calculated KPIs/charts -> AI explanation
+Copy [.env.example](.env.example) to `.env`, enter credentials and model identifiers, and restart the server. Never commit `.env`.
+
+Gemini, DeepSeek, OpenAI and other compatible endpoints are configurable. The working local configuration uses **Groq with Qwen** through the internal `deepseek` identifier, with `DEEPSEEK_BASE_URL` pointing to Groq. The variable name does not mean requests go to DeepSeek; the interface displays Groq when that endpoint is used.
+
+Normal local mode does not require authentication or enforce demo quotas. Real calls still consume provider allowance. Do not expose this mode as a public service.
+
+### Run the protected demo
+
+After configuring Neon Auth, the PostgreSQL connection, quota tables and a provider following the [access guide](docs/demo-access.md):
+
+```powershell
+.\.venv\Scripts\python.exe -B -m scripts.run_demo
 ```
 
-| Location | Responsibility |
-|---|---|
-| `src/etl/build_database.py` | Validate and load original CSVs |
-| `sql/schema.sql` | Relational tables, constraints and sales view |
-| `src/api/` | HTTP routes and analysis orchestration |
-| `src/analytics/` | Approved metrics, queries and panel recipes |
-| `src/ai/` | Provider requests and validated analysis plans |
-| `src/web/` | Portuguese interface and chart rendering |
-| `tests/` | Data, API and mocked AI regression tests |
-| `docs/` | Setup, metric definitions and known limitations |
+This mode requires a verified identity and available balance for AI requests. `DEMO_AI_ENABLED=false` pauses chat. The default allowance is **4 questions per account**, without renewal on reload or a new conversation. There is also a **20-question shared daily cap (UTC)** and a **15-second per-account cooldown**, configurable on the server.
 
-SQLite supports the current local setup. PostgreSQL is not a required migration or a committed next step. The older `transform_sales.py` script is separate from the prototype database load.
+Balance is reserved before calling AI; a later failure can consume the question. Both providers share the same balance. A question can involve planning, explanation and HTTP retries, so it does not correspond to a single provider call.
 
-## Correctness and limits
+## Deployment
 
-Orders count distinct sales orders, not rows. Average order value uses selected revenue divided by distinct selected orders. Gross profit subtracts product cost and is not net profit. Source currency has not been identified beyond its dollar symbol.
+The repository includes Vercel FastAPI configuration and dependencies in `pyproject.toml` and `uv.lock`. Local `.env` values must be configured separately in Vercel. The production origin must be authorized in Neon Auth.
 
-The loader checks keys, relationships, dates and monetary values, then reconciles totals before replacing the database. AI uses validated aggregates and cannot execute arbitrary SQL; it can still misunderstand a question or invent a textual explanation.
+See the [deployment walkthrough — Portuguese](docs/deployment.pt-BR.md). The remote build completed, but requesting an access email on the deployed site remains unresolved; local success does not establish production readiness.
+
+## Metrics and limitations
+
+| Metric | Definition |
+| --- | --- |
+| Orders | Distinct sales orders in the selection, not row count |
+| Average order value | Selected revenue ÷ distinct selected orders |
+| Gross profit | Revenue − product cost |
+| Gross margin | Gross profit ÷ revenue, where defined |
+
+Monetary values are stored in cents. The source uses `$`; the currency has not been confirmed. Gross profit excludes operating expenses and is not net profit.
+
+The loader checks keys, relationships, dates, values and total reconciliation before replacing the database. The dataset is a static sales example, not an integration with actual companies. Partial months, missing benchmarks and absent causal data limit conclusions.
+
+AI cannot run freely generated SQL, but it can misunderstand questions or make unsupported statements. QVD ingestion, per-client configuration and client isolation are not implemented.
+
+## Verification
 
 ```powershell
 .\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
 ```
 
-Automated provider tests use mocks. A live Gemini analysis completed after a transient service failure; that does not establish reliability across providers or questions.
+Last recorded run: **65 tests passed and 3 optional PostgreSQL tests were skipped**. Standard provider tests use simulated responses. UI checks cover login, quotas, failures and mobile layouts; real provider checks are separate and consume allowance. A successful real example does not establish accuracy across all questions.
 
-This is a single-user local prototype without authentication or production deployment. Supported data covers sales-related questions, not every department. Recent conversation context is kept in browser memory. A supported analysis normally has two AI stages; a transient failure can trigger one retry per stage. Provider usage and account limits apply.
+## Repository layout
 
-## Next steps: reuse prepared QVDs
+| Location | Responsibility |
+| --- | --- |
+| `data/raw/` | Source CSVs for the demonstration |
+| `src/etl/` and `sql/schema.sql` | Validated loading and relational schema |
+| `src/analytics/` | Deterministic metrics and queries |
+| `src/ai/` | Provider integration and analysis-plan validation |
+| `src/api/` | Routes, authentication and analysis orchestration |
+| `src/demo/` | Identity, configuration and persistent quotas |
+| `src/web/` | Brazilian Portuguese interface and charts |
+| `tests/` and `scripts/` | Tests and execution/verification utilities |
+| `docs/` | Technical guides, decisions and historical checkpoints |
 
-1. Separate data access from analysis planning, calculation and rendering.
-2. Configure fields, keys, relationships and metrics per dataset.
-3. Prove reuse with a second prepared test dataset, preserving chat and charts.
-4. Evaluate QVD ingestion and reconcile metrics against the Qlik application before a real-client pilot.
+## Documentation and direction
 
-The agreed direction is **sources → transformations in Qlik Sense → prepared QVDs → DataPilot → dashboard + AI**. Business transformations remain in Qlik. Application measures must be mapped; QVD ingestion does not automatically reproduce Qlik expressions or associations.
+- [Prototype guide](docs/prototype.md) · [Português](docs/prototype.pt-BR.md)
+- [Access, authentication and quotas](docs/demo-access.md) · [Português](docs/demo-access.pt-BR.md)
+- [Vercel deployment — Portuguese](docs/deployment.pt-BR.md)
+- [Technical analysis flow](docs/business-analysis.md)
+- [Development and learning guide — Portuguese](docs/desenvolvimento.pt-BR.md)
+- [Tests](tests/README.md) · [October 21 diagnosis](docs/checkpoint-2026-10-21.md)
 
-The implementation still uses CSV/SQLite. QVD ingestion, per-client configuration and client isolation are not implemented. Neither PostgreSQL nor DuckDB is a mandatory destination.
+Checkpoints describe individual sessions and may contain superseded statements. This README summarizes the current status.
 
-On 2026-09-30, the user approved live examples covering gross margin, Bikes and Accessories, with contextual answers and charts. This validates those interactions, not general model accuracy. See the [checkup](docs/checkup-2026-09-30.md), [development plan](docs/desenvolvimento.pt-BR.md) and [test guide](tests/README.md), in Portuguese.
+The next objective is to validate authentication and AI on the deployed site and finish a reliable demo. Future work aims to reuse data prepared in Qlik Sense, with explicit metrics and relationships per dataset. Reading QVDs does not automatically reproduce Qlik application measures or associations and is not currently implemented.

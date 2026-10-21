@@ -1,33 +1,57 @@
 # DataPilot
 
-**Checkpoint de 21/10/2026:** login confirmado e análise completa validada pela API com Gemini 2.5 Flash. Falta conferir no navegador do usuário e validar o deploy. [Diagnóstico e próximos passos](docs/checkpoint-2026-10-21.md).
-
 **Português** | [English](README.en.md)
 
-Projeto de aprendizado e portfólio que combina um portal de análise independente com um assistente de IA para perguntas sobre o negócio.
+Portal de análise de vendas com um assistente de IA: faça uma pergunta sobre o negócio, leia a resposta e abra os gráficos quando quiser explorar os números.
 
-**Estado atual: protótipo local.** A interface está em português brasileiro e funciona fora do Qlik Sense. O visual e a experiência de análise ainda precisam de refinamento.
+Projeto pessoal de estudo e portfólio, desenvolvido com auxílio de IA. O foco é aprender a construir uma aplicação utilizável e compreender suas decisões técnicas, com métricas calculadas de forma determinística e limitações documentadas. A interface está em português brasileiro.
 
-**Para acompanhar o código:** [Entendendo o desenvolvimento e as próximas entregas](docs/desenvolvimento.pt-BR.md).
+## Estado do projeto
 
-**Guias:** [Protótipo em português](docs/prototype.pt-BR.md) · [Protótipo em inglês](docs/prototype.md) · [Fluxo técnico da análise — em inglês](docs/business-analysis.md)
+**Protótipo funcional localmente; publicação em validação.**
 
-**Demo pública em preparação:** [login por e-mail, quatro perguntas por conta e roteiro para entender a implementação](docs/demo-access.pt-BR.md). A interface e as cotas estão implementadas; deploy ainda precisa de validação. A IA pública permanece pausada por padrão; a configuração local pode habilitá-la para testes.
+| Componente | Situação em 21/10/2026 |
+| --- | --- |
+| Carga dos CSVs, API, filtros, indicadores e gráficos | Implementados e verificados localmente |
+| Chat com Groq e modelo Qwen | Resposta e gráficos confirmados pelo usuário localmente |
+| Gemini | Uma análise completa pela API foi validada, mas houve nova falha de planejamento no navegador; problema em aberto |
+| Login por link de e-mail e saldo persistente | Validados localmente com Neon |
+| Vercel | Build e publicação concluídos; solicitação do link de acesso falha no ambiente publicado |
 
-## O que funciona hoje
+O fluxo completo de autenticação e IA na Vercel **ainda não está validado**. Não há garantia de disponibilidade dos provedores nem de exatidão das explicações geradas.
 
-- Carregamento validado de seis conjuntos de dados CSV no SQLite.
-- Um painel web com filtros, indicadores de vendas e gráficos.
-- Perguntas de negócio que geram painéis predefinidos de vendas, ticket médio, margem bruta e produtos.
-- Cálculos feitos em SQL/Python; a IA, quando configurada, escolhe o plano de análise e explica os resultados.
-- Provedores e modelos configuráveis, incluindo Gemini, DeepSeek, OpenAI e serviços com API compatível.
-- O painel calculado continua disponível se a explicação da IA falhar.
+## Funcionalidades
 
-O usuário faz uma pergunta sobre o negócio, e o assistente escolhe os indicadores e gráficos relacionados. A IA escolhe gráficos e indicadores entre opções permitidas. O chat considera as últimas quatro trocas e os filtros da análise anterior. Os gráficos são opcionais.
+- Painel de vendas com filtros de período, canal e categoria.
+- Receita, pedidos distintos, ticket médio, unidades, custo e margem bruta.
+- Perguntas sobre vendas, ticket, margem e produtos, com seleção de indicadores e gráficos entre opções permitidas.
+- Resposta antes dos gráficos, que podem ser abertos opcionalmente.
+- Contexto das últimas quatro trocas e dos filtros da análise anterior. **Nova conversa**, alteração dos filtros ou recarga limpam o histórico em memória.
+- Painel calculado preservado se a etapa de explicação da IA falhar.
+- Provedores e modelos configuráveis; modo de demonstração com opções aprovadas pelo servidor.
+- Acesso por e-mail, quatro perguntas por conta por padrão, cota diária global e intervalo entre perguntas.
 
-## Como executar localmente
+## Arquitetura
 
-Na pasta principal do projeto, abra o PowerShell:
+```text
+6 CSVs → carga e validação em Python → SQLite somente leitura
+                                              ↓
+                                  FastAPI → interface web
+
+Pergunta → plano da IA validado → métricas em SQL/Python → explicação da IA
+
+Neon Auth → identidade confirmada → PostgreSQL no Neon → reserva de saldo
+```
+
+A IA escolhe uma análise dentro de um contrato validado; ela não executa SQL arbitrário. Os números são calculados pelo sistema. Filtros, opções disponíveis e agregados são enviados ao provedor conforme a etapa; a explicação textual ainda pode conter erros.
+
+O SQLite guarda a base analítica de demonstração. O PostgreSQL do Neon guarda autenticação e cotas. Na Vercel, o SQLite é recriado durante o build a partir dos CSVs versionados; o saldo não depende de arquivos locais.
+
+**Stack:** Python, FastAPI, SQLite, PostgreSQL/Neon Auth, HTML, CSS e JavaScript, com APIs de IA compatíveis com Chat Completions.
+
+## Executar localmente
+
+Requisitos: Python 3.12–3.14 e acesso ao terminal. Exemplo para PowerShell, na raiz do repositório:
 
 ```powershell
 py -m venv .venv
@@ -36,65 +60,82 @@ py -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-Crie o ambiente virtual somente se ele ainda não existir. Abra http://127.0.0.1:8000.
-No Windows, pare o servidor antes de reconstruir o banco de dados.
+Abra [http://127.0.0.1:8000](http://127.0.0.1:8000). A documentação interativa da API fica em `/docs`.
 
-A IA é opcional: copie [.env.example](.env.example) para `.env`, configure as credenciais e os identificadores dos modelos localmente e reinicie o servidor. Nunca inclua credenciais em commits. Consulte os guias para detalhes de configuração e limitações.
+Crie o ambiente virtual somente se ainda não existir. O painel funciona sem provedor de IA. No Windows, pare o servidor antes de reconstruir o banco.
 
-## Como as partes se conectam
+### Configurar IA
 
-O caminho dos dados:
+Copie [.env.example](.env.example) para `.env`, preencha as credenciais e os identificadores dos modelos e reinicie o servidor. Não inclua `.env` em commits.
 
-```text
-CSVs originais -> validação e carga em Python -> SQLite -> FastAPI -> portal web
+Gemini, DeepSeek, OpenAI e outros endpoints compatíveis são configuráveis. A configuração local que funcionou usa **Groq com Qwen** no identificador interno `deepseek`, com `DEEPSEEK_BASE_URL` apontando para a Groq. O nome do campo não significa que a requisição vai para a DeepSeek; a interface mostra Groq quando esse endpoint é usado.
+
+O modo local normal não exige autenticação nem aplica cotas da demo. Chamadas reais continuam consumindo a franquia do provedor. Não exponha esse modo como serviço público.
+
+### Executar a demo protegida
+
+Após configurar Neon Auth, a conexão PostgreSQL, as tabelas de cotas e o provedor conforme o [guia de acesso](docs/demo-access.pt-BR.md):
+
+```powershell
+.\.venv\Scripts\python.exe -B -m scripts.run_demo
 ```
 
-O caminho de uma análise:
+Nesse modo, a IA exige identidade confirmada e saldo. `DEMO_AI_ENABLED=false` pausa o chat. A cota padrão é de **4 perguntas por conta**, sem renovação ao recarregar ou iniciar outra conversa. Há também um limite global de **20 perguntas por dia UTC** e intervalo de **15 segundos** por conta, configuráveis no servidor.
 
-```text
-Pergunta -> plano validado da IA -> indicadores e gráficos calculados -> explicação da IA
-```
+O saldo é reservado antes de chamar a IA; uma falha posterior pode consumir a pergunta. Trocar de provedor compartilha o mesmo saldo. Uma pergunta pode envolver planejamento, explicação e novas tentativas HTTP, portanto não equivale a uma única chamada de IA.
 
-A API coordena esse fluxo, consultando o banco para calcular os valores usados no painel e na explicação.
+## Publicação
 
-| Local | Responsabilidade |
-|---|---|
-| `src/etl/build_database.py` | Validar e carregar os CSVs originais |
-| `sql/schema.sql` | Definir tabelas, restrições e a visão de vendas |
-| `src/api/` | Receber requisições HTTP e coordenar a análise |
-| `src/analytics/` | Definir métricas, consultas e estruturas dos painéis |
-| `src/ai/` | Enviar requisições aos provedores e validar planos de análise |
-| `src/web/` | Exibir a interface em português e desenhar os gráficos |
-| `tests/` | Verificar dados, API e integração com respostas de IA simuladas |
-| `docs/` | Documentar configuração, métricas e limitações conhecidas |
+O projeto tem configuração FastAPI para Vercel e dependências registradas em `pyproject.toml` e `uv.lock`. As variáveis do `.env` local devem ser cadastradas separadamente na Vercel. O domínio de produção precisa ser autorizado no Neon Auth.
 
-O SQLite atende à execução local atual. PostgreSQL não é uma migração obrigatória nem uma próxima entrega definida. O script antigo `transform_sales.py` é separado do carregamento do banco usado pelo protótipo.
+Veja o [passo a passo de publicação](docs/deployment.pt-BR.md). O build remoto foi concluído, mas a falha de solicitação de e-mail no site publicado continua pendente; o funcionamento local não comprova o fluxo em produção.
 
-## Validação e limites
+## Métricas e limites
 
-A quantidade de pedidos usa a contagem distinta dos pedidos de venda. O ticket médio divide a receita selecionada pelos pedidos distintos da seleção. O lucro bruto desconta o custo dos produtos; despesas necessárias ao cálculo do lucro líquido não estão disponíveis. A moeda da fonte ainda não foi identificada além do símbolo de dólar.
+| Métrica | Definição |
+| --- | --- |
+| Pedidos | Contagem distinta de pedidos na seleção, não quantidade de linhas |
+| Ticket médio | Receita selecionada ÷ pedidos distintos selecionados |
+| Lucro bruto | Receita − custo dos produtos |
+| Margem bruta | Lucro bruto ÷ receita, quando definida |
 
-O carregamento verifica chaves, relacionamentos, datas e valores monetários, depois confere os totais antes de substituir o banco. A IA usa dados agregados validados e não pode executar SQL arbitrário. Mesmo assim, pode interpretar uma pergunta incorretamente ou inventar uma explicação.
+Valores monetários são armazenados em centavos. O símbolo `$` vem da fonte; a moeda não foi confirmada. Lucro bruto não inclui despesas operacionais e não representa lucro líquido.
 
-Para executar os testes:
+O carregamento verifica chaves, relacionamentos, datas, valores e reconciliação de totais antes de substituir o banco. Os dados são uma base estática de exemplo de vendas, não uma integração com empresas reais. Meses parciais, ausência de benchmarks e falta de dados causais limitam as conclusões.
+
+Não há execução de SQL gerado livremente pela IA, mas ela pode interpretar mal uma pergunta ou fazer afirmações sem suporte. Integração com QVD, configuração por cliente e isolamento entre clientes ainda não estão implementados.
+
+## Verificação
 
 ```powershell
 .\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
 ```
 
-Os testes automatizados dos provedores usam respostas simuladas. Uma análise real com Gemini foi concluída após uma falha temporária do serviço. Essa verificação não garante confiabilidade para todos os provedores ou perguntas.
+Última execução registrada: **65 testes aprovados e 3 testes opcionais de PostgreSQL pulados**. Os testes comuns de provedores usam respostas simuladas. Verificações de interface cobrem login, saldo, falhas e telas móveis; chamadas reais são verificações separadas e consomem franquia. Um caso real bem-sucedido não garante precisão em todas as perguntas.
 
-Este é um protótipo local para um usuário, sem autenticação ou configuração de produção. A base atual cobre perguntas relacionadas a vendas. A conversa mantém contexto recente na memória do navegador. Uma análise suportada normalmente usa duas etapas de IA; uma falha temporária pode gerar uma nova tentativa por etapa. O uso está sujeito aos custos e limites da conta no provedor.
+## Organização do código
 
-## Próximos passos: reutilizar QVDs tratados
+| Local | Responsabilidade |
+| --- | --- |
+| `data/raw/` | CSVs de origem usados na demonstração |
+| `src/etl/` e `sql/schema.sql` | Carga validada e modelo relacional |
+| `src/analytics/` | Métricas e consultas determinísticas |
+| `src/ai/` | Integração com provedores e validação dos planos |
+| `src/api/` | Rotas, autenticação e coordenação da análise |
+| `src/demo/` | Identidade, configuração e cotas persistentes |
+| `src/web/` | Interface e gráficos em português brasileiro |
+| `tests/` e `scripts/` | Testes e utilitários de execução/verificação |
+| `docs/` | Guias técnicos, decisões e checkpoints históricos |
 
-1. Separar o acesso aos dados do planejamento, cálculo e apresentação das análises.
-2. Configurar campos, chaves, relacionamentos e métricas por conjunto de dados.
-3. Validar a reutilização com uma segunda base de teste já tratada, preservando chat e gráficos.
-4. Avaliar a leitura dos QVDs e reconciliar os indicadores com o aplicativo Qlik antes do piloto real.
+## Documentação e evolução
 
-A direção acordada é **fontes → tratamento no Qlik Sense → QVDs tratados → DataPilot → painel + IA**. O tratamento de negócio permanece no Qlik. Medidas definidas no aplicativo precisam ser mapeadas; ler QVD não reproduz automaticamente expressões e associações do Qlik.
+- [Guia do protótipo](docs/prototype.pt-BR.md) · [English guide](docs/prototype.md)
+- [Acesso, autenticação e cotas](docs/demo-access.pt-BR.md) · [English](docs/demo-access.md)
+- [Publicação na Vercel](docs/deployment.pt-BR.md)
+- [Fluxo técnico de análise — English](docs/business-analysis.md)
+- [Guia de desenvolvimento e aprendizado](docs/desenvolvimento.pt-BR.md)
+- [Testes](tests/README.md) · [Diagnóstico de 21/10/2026](docs/checkpoint-2026-10-21.md)
 
-A implementação ainda usa CSV/SQLite. Leitura QVD, configuração por cliente e isolamento entre clientes não estão implementados. PostgreSQL e DuckDB não foram escolhidos como destino obrigatório.
+Os checkpoints registram o estado de cada sessão; afirmações históricas podem ter sido superadas. A situação atual está resumida neste README.
 
-Em 30/09/2026, o usuário aprovou exemplos reais de margem bruta, bicicletas e acessórios, com continuidade da conversa e gráficos. Isso valida a experiência observada, não todas as afirmações da IA. Consulte o [checkup](docs/checkup-2026-09-30.md), o [plano de desenvolvimento](docs/desenvolvimento.pt-BR.md) e o [guia dos testes](tests/README.md).
+O próximo objetivo é validar o login e a IA no ambiente publicado e concluir uma demo confiável. Como evolução futura, pretende-se reutilizar dados já tratados no Qlik Sense, com métricas e relacionamentos explícitos por base. A leitura de QVDs não reproduz automaticamente medidas e associações de um aplicativo Qlik e ainda não faz parte da implementação.
