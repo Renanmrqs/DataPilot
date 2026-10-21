@@ -28,11 +28,27 @@ class PlanTests(unittest.TestCase):
                 plan, _ = select_analysis("provider", "model", "question", {}, {})
                 self.assertIn(plan.topic, ("ticket", "margin"))
 
+    def test_gemini_uses_the_same_schema_as_local_validation(self):
+        with patch("src.ai.analysis_plan.request_completion", return_value=self.response('{"topic":"ticket"}')) as completion:
+            select_analysis("gemini", "test-model", "Ticket?", {}, {})
+        schema = completion.call_args.kwargs["response_schema"]
+        self.assertEqual(schema, AnalysisPlan.model_json_schema())
+        self.assertFalse(schema["additionalProperties"])
+        self.assertIn("ticket", schema["properties"]["topic"]["enum"])
+
+    def test_gemini_schema_does_not_bypass_validation_or_retry_invalid_output(self):
+        with patch("src.ai.analysis_plan.request_completion", return_value=self.response('{"topic":"ticket","sql":"SELECT *"}')) as completion:
+            with self.assertRaises(HTTPException) as caught:
+                select_analysis("gemini", "test-model", "Ticket?", {}, {})
+        self.assertEqual(caught.exception.status_code, 502)
+        self.assertEqual(completion.call_count, 1)
+
     def test_invalid_model_plans_are_rejected(self):
         cases = (
             '{"topic":"sales","sql":"DROP TABLE sales"}',
             '{"topic":"sales","breakdown":"password"}',
             '{"topic":"sales","filters":{"start_date":"invalid"}}',
+            json.dumps({"topic": "ticket", "message": "x" * 601}),
             "not JSON",
         )
         for content in cases:

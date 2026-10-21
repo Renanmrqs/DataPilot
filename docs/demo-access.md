@@ -1,6 +1,6 @@
 # Public demo access and quotas
 
-**Unresolved live failure:** the user confirmed email login but still cannot complete an AI analysis. See the [October 20 checkpoint](checkpoint-2026-10-20.md) before resuming. This is not a validated public release.
+**October 21 update:** the full API returned a complete real analysis with Gemini 2.5 Flash after the planning contract changes. User-browser verification and deployment remain pending. See the [latest checkpoint](checkpoint-2026-10-21.md). This is not a validated public release.
 
 The demo provides email magic-link sign-in, a server-owned question allowance, and a Portuguese UI showing remaining questions. Real email delivery and hosted login still require manual validation. Public AI stays paused by default.
 

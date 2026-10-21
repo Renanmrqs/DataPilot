@@ -1,6 +1,6 @@
 # DataPilot
 
-**Checkpoint de 20/10/2026:** login da demo confirmado; análise real com IA ainda falhando. [Estado salvo e próximos passos](docs/checkpoint-2026-10-20.md).
+**Checkpoint de 21/10/2026:** login confirmado e análise completa validada pela API com Gemini 2.5 Flash. Falta conferir no navegador do usuário e validar o deploy. [Diagnóstico e próximos passos](docs/checkpoint-2026-10-21.md).
 
 **Português** | [English](README.en.md)
 

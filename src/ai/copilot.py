@@ -93,7 +93,7 @@ def rate_limit_message(response):
     return message
 
 
-def request_completion(provider, model, messages, max_tokens=1200, transport=None):
+def request_completion(provider, model, messages, max_tokens=1200, transport=None, response_schema=None):
     """Shared HTTP call for planning and explaining an analysis."""
     config = settings(provider)
     if not config["key"] or not config["base_url"] or not config["models"]:
@@ -103,6 +103,11 @@ def request_completion(provider, model, messages, max_tokens=1200, transport=Non
 
     token_parameter = "max_completion_tokens" if provider == "openai" else "max_tokens"
     payload = {"model": model, "messages": messages, token_parameter: max_tokens}
+    if response_schema is not None:
+        payload["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {"name": "analysis_plan", "strict": True, "schema": response_schema},
+        }
     if provider == "gemini" and model.startswith(("gemini-3", "gemini-2.5")):
         # Gemini shares the output budget between thinking and the visible answer.
         payload["reasoning_effort"] = "low"

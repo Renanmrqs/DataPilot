@@ -1,5 +1,7 @@
 # Checkpoint: public demo access, October 20, 2026
 
+**Follow-up:** see [October 21: Gemini analysis](checkpoint-2026-10-21.md) for the subsequent diagnosis, code changes and successful real API check. The remaining text records the state at the end of October 20.
+
 ## Current outcome
 
 **Work in progress. The user still cannot complete a real AI analysis in the demo. Do not treat this checkpoint as a working public release.**

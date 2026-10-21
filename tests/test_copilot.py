@@ -27,6 +27,7 @@ class CopilotTests(unittest.TestCase):
         context_ids = []
         def handle(request):
             payload = json.loads(request.content)
+            self.assertNotIn("response_format", payload)
             context = json.loads(payload["messages"][1]["content"])
             self.assertEqual(context["validated_metrics"]["summary"]["revenue"], "1234.56")
             self.assertEqual(context["validated_metrics"]["summary"]["orders"], 2)
@@ -39,6 +40,20 @@ class CopilotTests(unittest.TestCase):
                 self.assertIn("$1,234.56",result["answer"])
                 context_ids.append(result["context_id"])
         self.assertEqual(len(set(context_ids)),1)
+
+    def test_structured_planning_schema_is_sent_to_provider(self):
+        from src.ai.copilot import request_completion
+        schema = {"type": "object", "properties": {"topic": {"type": "string", "enum": ["ticket"]}}, "required": ["topic"]}
+
+        def handle(request):
+            payload = json.loads(request.content)
+            self.assertEqual(payload["response_format"], {
+                "type": "json_schema", "json_schema": {"name": "analysis_plan", "strict": True, "schema": schema},
+            })
+            return httpx.Response(200, json={"choices": [{"message": {"content": '{"topic":"ticket"}'}, "finish_reason": "stop"}]})
+
+        result = request_completion("gemini", "test-model", [], transport=httpx.MockTransport(handle), response_schema=schema)
+        self.assertFalse(result["truncated"])
 
     def test_missing_configuration_and_unknown_models_do_not_call_provider(self):
         for provider, model, status in (("compatible","test-model",503),("deepseek","unknown",422),("unknown","test-model",422)):

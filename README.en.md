@@ -1,6 +1,6 @@
 # DataPilot
 
-**October 20, 2026 checkpoint:** demo login confirmed; live AI analysis still failing. [Saved state and next steps](docs/checkpoint-2026-10-20.md).
+**October 21, 2026 checkpoint:** demo login confirmed and a complete live API analysis validated with Gemini 2.5 Flash. User-browser verification and deployment remain pending. [Diagnosis and next steps](docs/checkpoint-2026-10-21.md).
 
 Public demo preparation: [email authentication and persistent question quotas](docs/demo-access.md). UI and quota controls are implemented; real email delivery, browser authentication and Vercel deployment still require validation. Public AI is paused by default.
 

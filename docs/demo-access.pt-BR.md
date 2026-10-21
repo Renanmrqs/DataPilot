@@ -1,6 +1,6 @@
 # Entendendo o acesso e as quatro perguntas da demo
 
-**Estado final da sessão:** o usuário confirmou o login, mas relatou que a IA ainda não funciona. A tentativa real de diagnóstico do planejamento não valida o fluxo completo. Retome pelo [checkpoint de 20/10/2026](checkpoint-2026-10-20.md), que registra o problema em aberto e o próximo passo.
+**Atualização de 21/10/2026:** a API completa retornou uma análise real com Gemini 2.5 Flash após o ajuste do formato do plano. O navegador do usuário ainda precisa ser conferido após reiniciar o servidor. Veja o [checkpoint mais recente](checkpoint-2026-10-21.md). Os registros abaixo descrevem também as etapas anteriores.
 
 ## Resultado desta etapa
 
