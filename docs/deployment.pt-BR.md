@@ -2,6 +2,8 @@
 
 ## Passo a passo atualizado — 21/10/2026
 
+Correção do primeiro build: o `uv` da Vercel exige a seção `[project]` no `pyproject.toml`. Foram adicionados os metadados, a faixa Python 3.12–3.14 e as mesmas dependências do `requirements.txt`, além do `uv.lock` gerado contra o PyPI público. `package = false` indica que a aplicação roda a partir dos arquivos do repositório, sem criar um pacote instalável. O entrypoint e o comando do ETL continuam os mesmos. A resolução local passou; o novo build remoto ainda precisa ser confirmado. Ao atualizar dependências, mantenha `requirements.txt` e `[project.dependencies]` alinhados e regenere o lockfile com `uv lock`.
+
 Login por e-mail e análise pela Groq foram confirmados localmente pelo usuário. Gemini ainda apresentou falha no navegador. A seleção Groq/Gemini foi conferida no Chrome sem consumir perguntas. O deploy remoto ainda precisa ser validado.
 
 1. Na conta pessoal Hobby da Vercel, escolha **Add New → Project** e importe `Renanmrqs/DataPilot`, branch `main`.
