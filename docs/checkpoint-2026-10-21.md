@@ -61,3 +61,13 @@ This sends demo filters and aggregates to the configured provider and consumes p
 If the user still reports failure, capture the HTTP status and safe validation categories from that exact attempt. Do not replace their report with the successful diagnostic. Google service availability and model output remain external sources of failure. Vercel deployment is still pending.
 
 Google's pricing page listed a free tier for Gemini 2.5 Flash at the time of selection: [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing). Usage remains subject to the account's provider limits.
+
+## Follow-up: selectable providers
+
+The user reported another invalid plan after restarting; the earlier successful live check did not resolve their browser failure. Gemini remains unresolved.
+
+The demo now exposes a primary and an optional alternate provider/model pair, configured through `DEMO_PROVIDER` / `DEMO_MODEL` and `DEMO_ALTERNATE_PROVIDER` / `DEMO_ALTERNATE_MODEL`. The API rejects other pairs before quota reservation. Both choices use the same verified account and global quota. The provider/model selectors are visible in demo mode.
+
+Locally, the existing `deepseek` configuration points to `api.groq.com` and a Qwen model. Its visible label is now Groq; the internal identifier and existing credentials remain compatible. It is the primary local choice, with Gemini 2.5 Flash as the alternate. No automatic fallback calls were added. Switching providers does not replenish questions. No additional live Groq request has been made in this follow-up.
+
+Automated validation: 68 tests, 65 passed and three optional PostgreSQL checks skipped, including alternate allowlisting and shared account reservation.

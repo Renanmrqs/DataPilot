@@ -20,11 +20,14 @@ def public_settings():
 def provider_ready(config):
     if not config.ready:
         return False
-    try:
-        provider = provider_settings(config.provider)
-    except HTTPException:
-        return False
-    return bool(provider["key"] and provider["base_url"] and config.model in provider["models"])
+    for provider_id, model in config.allowed_models:
+        try:
+            provider = provider_settings(provider_id)
+        except HTTPException:
+            continue
+        if provider["key"] and provider["base_url"] and model in provider["models"]:
+            return True
+    return False
 
 
 @dataclass
@@ -33,7 +36,7 @@ class DemoAccess:
     user: DemoUser
 
     def reserve(self, provider, model):
-        if (provider, model) != (self.settings.provider, self.settings.model):
+        if (provider, model) not in self.settings.allowed_models:
             raise HTTPException(422, "Use o modelo disponível nesta demonstração.")
         try:
             return QuotaStore(self.settings).reserve(self.user.id)

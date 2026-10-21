@@ -22,6 +22,7 @@ import test_prototype
 DEMO_ENV = {
     "VERCEL": "0", "DEMO_MODE": "true", "DEMO_AI_ENABLED": "true",
     "DEMO_PROVIDER": "gemini", "DEMO_MODEL": "demo-model",
+    "DEMO_ALTERNATE_PROVIDER": "", "DEMO_ALTERNATE_MODEL": "",
     "GEMINI_API_KEY": "not-a-real-key", "GEMINI_MODELS": "demo-model,private-model",
     "NEON_AUTH_BASE_URL": "https://auth.example.test/auth",
     "NEON_DATABASE_URL": "postgresql://unused",
@@ -96,6 +97,22 @@ class DemoApiTests(unittest.TestCase):
         data = self.client.get("/api/providers").json()["providers"]
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["models"], ["demo-model"])
+
+    def test_alternate_model_is_allowlisted_and_uses_the_same_account(self):
+        with patch.dict(os.environ, {
+            "DEMO_ALTERNATE_PROVIDER": "deepseek", "DEMO_ALTERNATE_MODEL": "alternate-model",
+            "DEEPSEEK_API_KEY": "fake", "DEEPSEEK_MODELS": "alternate-model,private-model",
+        }):
+            catalog = self.client.get("/api/providers").json()["providers"]
+            self.assertEqual([item["id"] for item in catalog], ["gemini", "deepseek"])
+            self.assertEqual(catalog[1]["models"], ["alternate-model"])
+            access = DemoAccess(demo_settings(), USER)
+            with patch("src.api.deployment.QuotaStore") as store:
+                access.reserve("deepseek", "alternate-model")
+                store.return_value.reserve.assert_called_once_with(USER.id)
+                with self.assertRaises(HTTPException):
+                    access.reserve("deepseek", "private-model")
+                self.assertEqual(store.return_value.reserve.call_count, 1)
 
     def test_quota_states_and_database_failure(self):
         cases = [({}, "ready", True), ({"remaining": 0, "used": 2}, "exhausted", False),

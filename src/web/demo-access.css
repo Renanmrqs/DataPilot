@@ -19,7 +19,7 @@
 .demo-access-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
 #demo-login { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; margin: 16px 0 8px; }
 #demo-message, #demo-email-status { font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
-.demo-mode .provider-choice, .demo-mode .model-choice { display: none; }
+
 .demo-mode #copilot-form { grid-template-columns: minmax(0, 1fr) auto; }
 .demo-mode .question { grid-column: 1 / -1; grid-row: auto; }
 .demo-mode #ask { grid-row: auto; }

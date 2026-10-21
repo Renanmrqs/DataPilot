@@ -23,6 +23,16 @@ class DemoSettings:
     auth_url: str
     database_url: str
 
+    alternate_provider: str = ""
+    alternate_model: str = ""
+
+    @property
+    def allowed_models(self):
+        pairs = [(self.provider, self.model)]
+        if self.alternate_provider and self.alternate_model:
+            pairs.append((self.alternate_provider, self.alternate_model))
+        return list(dict.fromkeys(pairs))
+
     @property
     def ready(self):
         return bool(self.auth_url and self.database_url and self.provider and self.model)
@@ -48,6 +58,8 @@ def demo_settings():
         cooldown_seconds=positive_integer("DEMO_COOLDOWN_SECONDS", 15),
         provider=os.getenv("DEMO_PROVIDER", "").strip(),
         model=os.getenv("DEMO_MODEL", "").strip(),
+        alternate_provider=os.getenv("DEMO_ALTERNATE_PROVIDER", "").strip(),
+        alternate_model=os.getenv("DEMO_ALTERNATE_MODEL", "").strip(),
         auth_url=auth_url,
         database_url=os.getenv("NEON_DATABASE_URL", "").strip(),
     )

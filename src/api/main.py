@@ -6,7 +6,7 @@ import sqlite3
 import json
 
 from fastapi import Depends, FastAPI, HTTPException
-from src.api.deployment import provider_ready, public_settings, require_ai_access
+from src.api.deployment import public_settings, require_ai_access
 from pydantic import BaseModel, ConfigDict, Field
 from dotenv import load_dotenv
 from src.ai.copilot import explain, list_providers
@@ -111,8 +111,10 @@ def create_app(database=DATABASE):
         config = public_settings()
         catalog = list_providers()
         if config.enabled:
-            catalog = [dict(item, models=[config.model], configured=provider_ready(config))
-                       for item in catalog if item["id"] == config.provider]
+            catalog = [dict(item, models=[model for provider, model in config.allowed_models
+                                         if provider == item["id"] and model in item["models"]])
+                       for item in catalog if any(provider == item["id"] for provider, _ in config.allowed_models)]
+            catalog.sort(key=lambda item: item["id"] != config.provider)
         return {"providers": catalog}
 
     @app.post("/api/copilot")

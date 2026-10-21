@@ -24,8 +24,7 @@
       return;
     }
     const quota = state.quota;
-    const providerLabels = {gemini: "Gemini", deepseek: "DeepSeek", openai: "OpenAI", compatible: "IA"};
-    element("demo-provider").textContent = state.provider ? `· ${providerLabels[state.provider] || "IA"}` : "";
+    element("demo-provider").textContent = "";
     element("demo-quota").textContent = state.authenticated && quota
       ? `${quota.remaining} de ${quota.limit} perguntas disponíveis`
       : `${state.default_limit} perguntas por conta`;

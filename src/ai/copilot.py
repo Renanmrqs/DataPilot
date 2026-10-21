@@ -37,6 +37,8 @@ def settings(provider):
     if provider not in PROVIDERS:
         raise HTTPException(422, "Provedor de IA desconhecido.")
     label, default_url, prefix = PROVIDERS[provider]
+    if provider == "deepseek" and "api.groq.com" in os.getenv(prefix + "_BASE_URL", ""):
+        label = "Groq"
     return {
         "id": provider, "label": label,
         "base_url": (os.getenv(prefix + "_BASE_URL") or default_url or "").rstrip("/"),
