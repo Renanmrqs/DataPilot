@@ -1,37 +1,55 @@
 # DataPilot
 
-[Português](readme.MD) | **English**
+[Português](readme.MD) · **English**
 
-A sales analytics portal with an AI assistant: ask a business question, read the answer, and optionally open charts to explore the numbers.
+### Sales analytics with data, context and AI.
 
-A personal learning and portfolio project developed with AI assistance. The goal is to build a usable application and understand its engineering decisions, with deterministic metric calculations and documented limitations. The application interface is in Brazilian Portuguese.
+A dashboard for exploring sales metrics and an assistant for asking questions in natural language. The application calculates the numbers; AI structures the analysis and explains the results.
 
-## Project status
+**[Try the live demo →](https://data-pilot-neon.vercel.app/)** · [Run locally](#run-locally) · [Documentation](#documentation)
 
-**Working local prototype; deployment validation in progress.**
+A personal learning and portfolio project developed with AI assistance. The goal is to connect data analysis, web development and software engineering in a usable application, with documented technical decisions and limitations. The interface is in Brazilian Portuguese.
 
-| Component | Status on October 21, 2026 |
-| --- | --- |
-| CSV loading, API, filters, KPIs and charts | Implemented and checked locally |
-| Groq chat with a Qwen model | Answer and charts confirmed locally by the user |
-| Gemini | One complete live API analysis passed, but planning failed again in the browser; unresolved |
-| Email-link login and persistent balance | Validated locally with Neon |
-| Vercel | Build and deployment completed; requesting an access email fails on the deployed site |
+## Live demo
 
-The complete authentication and AI flow on Vercel **has not been validated**. Provider availability and the accuracy of generated explanations are not guaranteed.
+**Deployed on Vercel, with the complete access and analysis flow confirmed by the author on October 23, 2026.** The earlier email request issue was resolved by registering the origin again in Neon Auth without a trailing slash.
 
-## Features
+1. Open the site and explore the dashboard and its filters.
+2. In the assistant section, request an access link by email.
+3. Open the link in the same browser and ask a question about the data.
+4. Read the answer and open the charts to explore the results.
 
-- Sales overview with date, channel and category filters.
-- Revenue, distinct orders, average order value, units, cost and gross margin.
-- Sales, order-value, margin and product questions, with KPIs and charts selected from approved options.
-- Answers shown before optional charts.
-- Context from the last four exchanges and previous analysis filters. **Nova conversa**, filter changes or a reload clear the in-memory history.
-- Calculated panels remain available if the explanation stage fails.
-- Configurable providers and models; server-approved choices in demo mode.
-- Email access, four questions per account by default, a shared daily cap and a per-account cooldown.
+The demo uses a static sample dataset. The dashboard is available without signing in; AI requires verified access and an available allowance. Defaults are **4 questions per account**, a shared cap of **20 questions per UTC day** and a **15-second** cooldown between questions. These values are configurable.
 
-## Architecture
+AI options depend on provider configuration and availability. Confirmation of the complete flow does not mean every model or question has been validated.
+
+## Project preview
+
+### Sales dashboard
+
+An overview of sales metrics, filters and trends.
+
+![DataPilot sales dashboard with metrics and filters](docs/images/dashboard.png)
+
+### Analysis assistant
+
+A natural-language question, the assistant's answer and charts based on the selected data.
+
+![DataPilot assistant showing an answer and analysis charts](docs/images/assistant.png)
+
+## What you can do
+
+- Filter sales by date range, channel and category.
+- Track revenue, distinct orders, average order value, units, cost and gross margin.
+- Ask questions about sales, margin, order value and products in natural language.
+- Explore metrics and charts selected from application-approved options.
+- Continue a conversation with context from the last four exchanges and the previous analysis filters.
+- View calculated metrics even if the AI explanation stage fails.
+- Sign in through an email link and retain your account allowance after reloading.
+
+**Nova conversa** (new conversation), filter changes or a page reload clear the in-memory history. Account allowance stays on the server; switching providers does not renew it. A failure after allowance reservation can consume a question.
+
+## How it works
 
 ```text
 6 CSVs → validated Python load → read-only SQLite
@@ -40,102 +58,142 @@ The complete authentication and AI flow on Vercel **has not been validated**. Pr
 
 Question → validated AI plan → SQL/Python metrics → AI explanation
 
-Neon Auth → verified identity → Neon PostgreSQL → quota reservation
+Neon Auth → verified identity → Neon PostgreSQL → quota enforcement
 ```
 
-AI selects an analysis through a validated contract; it cannot execute arbitrary SQL. The application calculates the numbers. Filters, available options and aggregates are sent to the provider as needed for each stage; textual explanations can still be wrong.
+AI proposes a plan within a validated contract. The application runs allowed queries and calculates the metrics; it does not execute arbitrary model-generated SQL. Filters, available options and aggregates are sent to the provider as needed for each analysis stage.
 
-SQLite stores the demonstration analytics dataset. Neon PostgreSQL stores authentication data and quotas. Vercel rebuilds SQLite from versioned CSVs during the build; account balances do not depend on local files.
+SQLite stores the analytics dataset and is rebuilt from CSVs during the Vercel build. Authentication and quotas use Neon; account allowance does not depend on local deployment files.
 
-**Stack:** Python, FastAPI, SQLite, PostgreSQL/Neon Auth, HTML, CSS and JavaScript, with Chat Completions-compatible AI APIs.
+| Layer | Technologies |
+| --- | --- |
+| Data and metrics | Python, pandas, SQL and SQLite |
+| API | FastAPI and Pydantic |
+| Interface | HTML, CSS and JavaScript |
+| Access and quotas | Neon Auth and PostgreSQL |
+| AI | Configurable APIs, including Chat Completions-compatible endpoints |
+| Hosting | Vercel |
 
 ## Run locally
 
-Requirements: Python 3.12–3.14 and a terminal. From the repository root in PowerShell:
+Requirements: **Python 3.12–3.14**, Git and a terminal. Run commands from the repository root.
+
+### Linux / macOS — Bash or Zsh
+
+```bash
+git clone https://github.com/Renanmrqs/DataPilot.git
+cd DataPilot
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m src.etl.build_database
+python -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000
+```
+
+### Windows — PowerShell
 
 ```powershell
+git clone https://github.com/Renanmrqs/DataPilot.git
+cd DataPilot
 py -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m src.etl.build_database
 .\.venv\Scripts\python.exe -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Interactive API documentation is available at `/docs`.
+Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)**. Interactive API documentation is available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
 
-Create the virtual environment only if it does not already exist. The dashboard works without an AI provider. Stop the server before rebuilding SQLite on Windows.
+If you already cloned the project, start in the existing directory and create `.venv` only if needed. After a `git pull`, install `requirements.txt` again to include new dependencies. On Windows, stop the server before rebuilding the database.
 
 ### Configure AI
 
-Copy [.env.example](.env.example) to `.env`, enter credentials and model identifiers, and restart the server. Never commit `.env`.
+The dashboard works without AI credentials. To enable the assistant:
 
-Gemini, DeepSeek, OpenAI and other compatible endpoints are configurable. The working local configuration uses **Groq with Qwen** through the internal `deepseek` identifier, with `DEEPSEEK_BASE_URL` pointing to Groq. The variable name does not mean requests go to DeepSeek; the interface displays Groq when that endpoint is used.
+1. Copy [.env.example](.env.example) to `.env`.
+2. Enter credentials and model identifiers for your chosen provider.
+3. Restart the server.
 
-Normal local mode does not require authentication or enforce demo quotas. Real calls still consume provider allowance. Do not expose this mode as a public service.
+Gemini, DeepSeek, OpenAI and other compatible endpoints are configurable. The **Groq** integration uses the internal `deepseek` identifier with `DEEPSEEK_BASE_URL` pointing to Groq; the interface identifies the provider from the endpoint.
 
-### Run the protected demo
+The `.env` file is not versioned and does not come with `git pull`. Keep credentials private. Normal local mode does not require login or enforce demo quotas, but real calls consume provider allowance; this mode is intended for local use.
 
-After configuring Neon Auth, the PostgreSQL connection, quota tables and a provider following the [access guide](docs/demo-access.md):
+### Run with login and quotas
 
-```powershell
-.\.venv\Scripts\python.exe -B -m scripts.run_demo
+Configure Neon Auth, the PostgreSQL connection, quota tables and a provider following the [access guide](docs/demo-access.md). Then, with the virtual environment activated:
+
+```bash
+python -B -m scripts.run_demo
 ```
 
-This mode requires a verified identity and available balance for AI requests. `DEMO_AI_ENABLED=false` pauses chat. The default allowance is **4 questions per account**, without renewal on reload or a new conversation. There is also a **20-question shared daily cap (UTC)** and a **15-second per-account cooldown**, configurable on the server.
+In PowerShell, use `.\.venv\Scripts\python.exe -B -m scripts.run_demo`. Setting `DEMO_AI_ENABLED=false` keeps chat paused.
 
-Balance is reserved before calling AI; a later failure can consume the question. Both providers share the same balance. A question can involve planning, explanation and HTTP retries, so it does not correspond to a single provider call.
+## Deploy on Vercel
 
-## Deployment
+The [deployment guide — Portuguese](docs/deployment.pt-BR.md) covers the setup. FastAPI configuration is in `pyproject.toml`, with dependencies also recorded in `uv.lock`.
 
-The repository includes Vercel FastAPI configuration and dependencies in `pyproject.toml` and `uv.lock`. Local `.env` values must be configured separately in Vercel. The production origin must be authorized in Neon Auth.
+Local environment variables must be configured separately in Vercel. In Neon Auth, authorize the exact site origin, **without a trailing slash, path or fragment**:
 
-See the [deployment walkthrough — Portuguese](docs/deployment.pt-BR.md). The remote build completed, but requesting an access email on the deployed site remains unresolved; local success does not establish production readiness.
+```text
+https://data-pilot-neon.vercel.app
+```
+
+Preview URLs are separate origins. Redeploy after changing environment variables in Vercel. Guides and checkpoints contain historical records; this README describes the current demo status.
 
 ## Metrics and limitations
 
 | Metric | Definition |
 | --- | --- |
-| Orders | Distinct sales orders in the selection, not row count |
+| Orders | Distinct sales orders in the selection |
 | Average order value | Selected revenue ÷ distinct selected orders |
 | Gross profit | Revenue − product cost |
 | Gross margin | Gross profit ÷ revenue, where defined |
 
 Monetary values are stored in cents. The source uses `$`; the currency has not been confirmed. Gross profit excludes operating expenses and is not net profit.
 
-The loader checks keys, relationships, dates, values and total reconciliation before replacing the database. The dataset is a static sales example, not an integration with actual companies. Partial months, missing benchmarks and absent causal data limit conclusions.
+The loader checks keys, relationships, dates, values and total reconciliation before replacing the database. The dataset is not an integration with actual companies. Partial months and missing benchmarks or causal data limit conclusions.
 
-AI cannot run freely generated SQL, but it can misunderstand questions or make unsupported statements. QVD ingestion, per-client configuration and client isolation are not implemented.
+AI explanations can contain errors, even with application-calculated metrics. QVD ingestion, per-client configuration and client isolation are not implemented.
 
-## Verification
+## Tests
 
-```powershell
-.\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
+With the virtual environment activated:
+
+```bash
+python -B -m unittest discover -s tests -v
 ```
 
-Last recorded run: **65 tests passed and 3 optional PostgreSQL tests were skipped**. Standard provider tests use simulated responses. UI checks cover login, quotas, failures and mobile layouts; real provider checks are separate and consume allowance. A successful real example does not establish accuracy across all questions.
+In PowerShell, use `.\.venv\Scripts\python.exe -B -m unittest discover -s tests -v`.
+
+The standard suite uses temporary databases and simulated providers without real AI calls. PostgreSQL tests are optional. UI checks and live calls have separate procedures in the [test guide — Portuguese](tests/README.md).
 
 ## Repository layout
 
 | Location | Responsibility |
 | --- | --- |
-| `data/raw/` | Source CSVs for the demonstration |
+| `data/raw/` | Demo CSVs |
 | `src/etl/` and `sql/schema.sql` | Validated loading and relational schema |
 | `src/analytics/` | Deterministic metrics and queries |
-| `src/ai/` | Provider integration and analysis-plan validation |
+| `src/ai/` | Providers and analysis-plan validation |
 | `src/api/` | Routes, authentication and analysis orchestration |
-| `src/demo/` | Identity, configuration and persistent quotas |
-| `src/web/` | Brazilian Portuguese interface and charts |
-| `tests/` and `scripts/` | Tests and execution/verification utilities |
-| `docs/` | Technical guides, decisions and historical checkpoints |
+| `src/demo/` | Configuration, identity and persistent quotas |
+| `src/web/` | Interface and charts |
+| `tests/` and `scripts/` | Tests and utilities |
+| `docs/` | Technical guides, decisions and checkpoints |
 
-## Documentation and direction
+## Next steps
 
-- [Prototype guide](docs/prototype.md) · [Português](docs/prototype.pt-BR.md)
-- [Access, authentication and quotas](docs/demo-access.md) · [Português](docs/demo-access.pt-BR.md)
+- Improve error messages and observability for access and AI flows.
+- Expand examples and checks for model responses.
+- Extend analyses and comparisons between periods.
+- Investigate reusing data prepared in Qlik Sense, with explicit metrics and relationships per dataset.
+
+These are future directions, not available features. Reading QVDs does not automatically reproduce Qlik application measures or associations.
+
+## Documentation
+
+- [Prototype guide](docs/prototype.md)
+- [Access, authentication and quotas](docs/demo-access.md)
 - [Vercel deployment — Portuguese](docs/deployment.pt-BR.md)
 - [Technical analysis flow](docs/business-analysis.md)
-- [Development and learning guide — Portuguese](docs/desenvolvimento.pt-BR.md)
-- [Tests](tests/README.md) · [October 21 diagnosis](docs/checkpoint-2026-10-21.md)
-
-Checkpoints describe individual sessions and may contain superseded statements. This README summarizes the current status.
-
-The next objective is to validate authentication and AI on the deployed site and finish a reliable demo. Future work aims to reuse data prepared in Qlik Sense, with explicit metrics and relationships per dataset. Reading QVDs does not automatically reproduce Qlik application measures or associations and is not currently implemented.
+- [Development and learning — Portuguese](docs/desenvolvimento.pt-BR.md)
+- [Tests and validation — Portuguese](tests/README.md)

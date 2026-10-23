@@ -1,141 +1,199 @@
 # DataPilot
 
-**Português** | [English](README.en.md)
+**Português** · [English](README.en.md)
 
-Portal de análise de vendas com um assistente de IA: faça uma pergunta sobre o negócio, leia a resposta e abra os gráficos quando quiser explorar os números.
+### Análise de vendas com dados, contexto e IA.
 
-Projeto pessoal de estudo e portfólio, desenvolvido com auxílio de IA. O foco é aprender a construir uma aplicação utilizável e compreender suas decisões técnicas, com métricas calculadas de forma determinística e limitações documentadas. A interface está em português brasileiro.
+Um painel para explorar indicadores de vendas e um assistente para fazer perguntas em linguagem natural. Os números são calculados pela aplicação; a IA organiza a análise e explica os resultados.
 
-## Estado do projeto
+**[Abrir a demonstração →](https://data-pilot-neon.vercel.app/)** · [Executar localmente](#executar-localmente) · [Documentação](#documentação)
 
-**Protótipo funcional localmente; publicação em validação.**
+Projeto pessoal de estudo e portfólio, desenvolvido com auxílio de IA. O objetivo é conectar análise de dados, desenvolvimento web e engenharia de software em uma aplicação utilizável, com decisões técnicas e limitações documentadas. A interface está em português brasileiro.
 
-| Componente | Situação em 21/10/2026 |
-| --- | --- |
-| Carga dos CSVs, API, filtros, indicadores e gráficos | Implementados e verificados localmente |
-| Chat com Groq e modelo Qwen | Resposta e gráficos confirmados pelo usuário localmente |
-| Gemini | Uma análise completa pela API foi validada, mas houve nova falha de planejamento no navegador; problema em aberto |
-| Login por link de e-mail e saldo persistente | Validados localmente com Neon |
-| Vercel | Build e publicação concluídos; solicitação do link de acesso falha no ambiente publicado |
+## Demonstração
 
-O fluxo completo de autenticação e IA na Vercel **ainda não está validado**. Não há garantia de disponibilidade dos provedores nem de exatidão das explicações geradas.
+**Demo publicada na Vercel, com fluxo completo de acesso e análise confirmado pelo autor em 23/10/2026.** O problema anterior na solicitação de e-mail foi resolvido ao cadastrar novamente a origem no Neon Auth sem a barra final.
 
-## Funcionalidades
+1. Abra o site e explore o painel e seus filtros.
+2. Na seção do assistente, solicite um link de acesso por e-mail.
+3. Abra o link no mesmo navegador e faça uma pergunta sobre os dados.
+4. Leia a resposta e abra os gráficos para explorar os resultados.
 
-- Painel de vendas com filtros de período, canal e categoria.
-- Receita, pedidos distintos, ticket médio, unidades, custo e margem bruta.
-- Perguntas sobre vendas, ticket, margem e produtos, com seleção de indicadores e gráficos entre opções permitidas.
-- Resposta antes dos gráficos, que podem ser abertos opcionalmente.
-- Contexto das últimas quatro trocas e dos filtros da análise anterior. **Nova conversa**, alteração dos filtros ou recarga limpam o histórico em memória.
-- Painel calculado preservado se a etapa de explicação da IA falhar.
-- Provedores e modelos configuráveis; modo de demonstração com opções aprovadas pelo servidor.
-- Acesso por e-mail, quatro perguntas por conta por padrão, cota diária global e intervalo entre perguntas.
+A demo usa uma base estática de exemplo. O painel pode ser explorado sem login; a IA exige acesso confirmado e saldo. Por padrão, são **4 perguntas por conta**, com limite compartilhado de **20 perguntas por dia UTC** e intervalo de **15 segundos** entre perguntas. Esses valores são configuráveis.
 
-## Arquitetura
+As opções de IA dependem da configuração e da disponibilidade dos provedores. A validação do fluxo completo não significa que todos os modelos ou todas as perguntas foram validados.
+
+## Veja o projeto
+
+### Painel de vendas
+
+Visão geral dos indicadores, filtros e evolução das vendas.
+
+![Painel de vendas do DataPilot com indicadores e filtros](docs/images/dashboard.png)
+
+### Assistente de análise
+
+Pergunta em linguagem natural, resposta do assistente e gráficos com os dados da seleção.
+
+![Assistente do DataPilot com resposta e gráficos da análise](docs/images/assistant.png)
+
+## O que você pode fazer
+
+- Filtrar vendas por período, canal e categoria.
+- Acompanhar receita, pedidos distintos, ticket médio, unidades, custo e margem bruta.
+- Perguntar sobre vendas, margem, ticket e produtos em linguagem natural.
+- Explorar indicadores e gráficos selecionados entre opções permitidas pela aplicação.
+- Continuar uma conversa com contexto das últimas quatro trocas e dos filtros da análise anterior.
+- Consultar os indicadores calculados mesmo quando a etapa de explicação da IA falhar.
+- Entrar por link de e-mail e manter o saldo da conta ao recarregar a página.
+
+**Nova conversa**, alterações nos filtros ou recarga da página limpam o histórico em memória. O saldo da conta permanece no servidor; trocar de provedor não renova a cota. Uma falha após a reserva de saldo pode consumir a pergunta.
+
+## Como funciona
 
 ```text
 6 CSVs → carga e validação em Python → SQLite somente leitura
                                               ↓
-                                  FastAPI → interface web
+                                   FastAPI → interface web
 
 Pergunta → plano da IA validado → métricas em SQL/Python → explicação da IA
 
-Neon Auth → identidade confirmada → PostgreSQL no Neon → reserva de saldo
+Neon Auth → identidade confirmada → PostgreSQL no Neon → controle de cotas
 ```
 
-A IA escolhe uma análise dentro de um contrato validado; ela não executa SQL arbitrário. Os números são calculados pelo sistema. Filtros, opções disponíveis e agregados são enviados ao provedor conforme a etapa; a explicação textual ainda pode conter erros.
+A IA propõe um plano dentro de um contrato validado. A aplicação executa as consultas permitidas e calcula as métricas; não há execução de SQL livre gerado pelo modelo. Filtros, opções disponíveis e agregados são enviados ao provedor conforme a etapa da análise.
 
-O SQLite guarda a base analítica de demonstração. O PostgreSQL do Neon guarda autenticação e cotas. Na Vercel, o SQLite é recriado durante o build a partir dos CSVs versionados; o saldo não depende de arquivos locais.
+O SQLite armazena os dados analíticos e é reconstruído a partir dos CSVs durante o build na Vercel. A autenticação e as cotas usam o Neon; o saldo não depende dos arquivos locais do deploy.
 
-**Stack:** Python, FastAPI, SQLite, PostgreSQL/Neon Auth, HTML, CSS e JavaScript, com APIs de IA compatíveis com Chat Completions.
+| Camada | Tecnologias |
+| --- | --- |
+| Dados e métricas | Python, pandas, SQL e SQLite |
+| API | FastAPI e Pydantic |
+| Interface | HTML, CSS e JavaScript |
+| Acesso e cotas | Neon Auth e PostgreSQL |
+| IA | APIs configuráveis, incluindo endpoints compatíveis com Chat Completions |
+| Hospedagem | Vercel |
 
 ## Executar localmente
 
-Requisitos: Python 3.12–3.14 e acesso ao terminal. Exemplo para PowerShell, na raiz do repositório:
+Requisitos: **Python 3.12–3.14**, Git e um terminal. Execute os comandos na raiz do repositório.
+
+### Linux / macOS — Bash ou Zsh
+
+```bash
+git clone https://github.com/Renanmrqs/DataPilot.git
+cd DataPilot
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m src.etl.build_database
+python -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000
+```
+
+### Windows — PowerShell
 
 ```powershell
+git clone https://github.com/Renanmrqs/DataPilot.git
+cd DataPilot
 py -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m src.etl.build_database
 .\.venv\Scripts\python.exe -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-Abra [http://127.0.0.1:8000](http://127.0.0.1:8000). A documentação interativa da API fica em `/docs`.
+Abra **[http://127.0.0.1:8000](http://127.0.0.1:8000)**. A documentação interativa da API fica em [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
 
-Crie o ambiente virtual somente se ainda não existir. O painel funciona sem provedor de IA. No Windows, pare o servidor antes de reconstruir o banco.
+Se já clonou o projeto, comece na pasta existente e crie o `.venv` apenas se necessário. Após um `git pull`, instale novamente o `requirements.txt` para incluir novas dependências. No Windows, pare o servidor antes de reconstruir o banco.
 
-### Configurar IA
+### Configurar a IA
 
-Copie [.env.example](.env.example) para `.env`, preencha as credenciais e os identificadores dos modelos e reinicie o servidor. Não inclua `.env` em commits.
+O painel funciona sem credenciais de IA. Para habilitar o assistente:
 
-Gemini, DeepSeek, OpenAI e outros endpoints compatíveis são configuráveis. A configuração local que funcionou usa **Groq com Qwen** no identificador interno `deepseek`, com `DEEPSEEK_BASE_URL` apontando para a Groq. O nome do campo não significa que a requisição vai para a DeepSeek; a interface mostra Groq quando esse endpoint é usado.
+1. Copie [.env.example](.env.example) para `.env`.
+2. Preencha as credenciais e os identificadores de modelos do provedor escolhido.
+3. Reinicie o servidor.
 
-O modo local normal não exige autenticação nem aplica cotas da demo. Chamadas reais continuam consumindo a franquia do provedor. Não exponha esse modo como serviço público.
+Gemini, DeepSeek, OpenAI e outros endpoints compatíveis são configuráveis. A integração com **Groq** usa o identificador interno `deepseek`, com `DEEPSEEK_BASE_URL` apontando para a Groq; a interface identifica o provedor pelo endpoint.
 
-### Executar a demo protegida
+O `.env` não é versionado e não vem no `git pull`. Mantenha as credenciais privadas. O modo local normal dispensa login e cotas da demo, mas chamadas reais consomem a franquia do provedor; esse modo se destina ao uso local.
 
-Após configurar Neon Auth, a conexão PostgreSQL, as tabelas de cotas e o provedor conforme o [guia de acesso](docs/demo-access.pt-BR.md):
+### Executar com login e cotas
 
-```powershell
-.\.venv\Scripts\python.exe -B -m scripts.run_demo
+Configure Neon Auth, a conexão PostgreSQL, as tabelas de cotas e o provedor conforme o [guia de acesso](docs/demo-access.pt-BR.md). Depois, com o ambiente virtual ativo:
+
+```bash
+python -B -m scripts.run_demo
 ```
 
-Nesse modo, a IA exige identidade confirmada e saldo. `DEMO_AI_ENABLED=false` pausa o chat. A cota padrão é de **4 perguntas por conta**, sem renovação ao recarregar ou iniciar outra conversa. Há também um limite global de **20 perguntas por dia UTC** e intervalo de **15 segundos** por conta, configuráveis no servidor.
+No PowerShell, use `.\.venv\Scripts\python.exe -B -m scripts.run_demo`. A variável `DEMO_AI_ENABLED=false` mantém o chat pausado.
 
-O saldo é reservado antes de chamar a IA; uma falha posterior pode consumir a pergunta. Trocar de provedor compartilha o mesmo saldo. Uma pergunta pode envolver planejamento, explicação e novas tentativas HTTP, portanto não equivale a uma única chamada de IA.
+## Publicação na Vercel
 
-## Publicação
+O [guia de publicação](docs/deployment.pt-BR.md) detalha o deploy. A configuração FastAPI fica no `pyproject.toml`, com dependências registradas também no `uv.lock`.
 
-O projeto tem configuração FastAPI para Vercel e dependências registradas em `pyproject.toml` e `uv.lock`. As variáveis do `.env` local devem ser cadastradas separadamente na Vercel. O domínio de produção precisa ser autorizado no Neon Auth.
+As variáveis locais precisam ser cadastradas separadamente na Vercel. No Neon Auth, autorize a origem exata do site, **sem barra final, caminho ou fragmento**:
 
-Veja o [passo a passo de publicação](docs/deployment.pt-BR.md). O build remoto foi concluído, mas a falha de solicitação de e-mail no site publicado continua pendente; o funcionamento local não comprova o fluxo em produção.
+```text
+https://data-pilot-neon.vercel.app
+```
+
+URLs de preview são origens diferentes. Após alterar variáveis de ambiente na Vercel, faça um novo deploy. Os guias e checkpoints contêm registros históricos; o status atual da demo está neste README.
 
 ## Métricas e limites
 
 | Métrica | Definição |
 | --- | --- |
-| Pedidos | Contagem distinta de pedidos na seleção, não quantidade de linhas |
+| Pedidos | Contagem distinta de pedidos na seleção |
 | Ticket médio | Receita selecionada ÷ pedidos distintos selecionados |
 | Lucro bruto | Receita − custo dos produtos |
 | Margem bruta | Lucro bruto ÷ receita, quando definida |
 
 Valores monetários são armazenados em centavos. O símbolo `$` vem da fonte; a moeda não foi confirmada. Lucro bruto não inclui despesas operacionais e não representa lucro líquido.
 
-O carregamento verifica chaves, relacionamentos, datas, valores e reconciliação de totais antes de substituir o banco. Os dados são uma base estática de exemplo de vendas, não uma integração com empresas reais. Meses parciais, ausência de benchmarks e falta de dados causais limitam as conclusões.
+A carga verifica chaves, relacionamentos, datas, valores e reconciliação de totais antes de substituir o banco. A base não representa uma integração com empresas reais. Meses parciais e ausência de referências de comparação ou dados causais limitam as conclusões.
 
-Não há execução de SQL gerado livremente pela IA, mas ela pode interpretar mal uma pergunta ou fazer afirmações sem suporte. Integração com QVD, configuração por cliente e isolamento entre clientes ainda não estão implementados.
+As explicações da IA podem conter erros, mesmo com métricas calculadas pela aplicação. Integração com QVD, configuração por cliente e isolamento entre clientes ainda não estão implementados.
 
-## Verificação
+## Testes
 
-```powershell
-.\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
+Com o ambiente virtual ativo:
+
+```bash
+python -B -m unittest discover -s tests -v
 ```
 
-Última execução registrada: **65 testes aprovados e 3 testes opcionais de PostgreSQL pulados**. Os testes comuns de provedores usam respostas simuladas. Verificações de interface cobrem login, saldo, falhas e telas móveis; chamadas reais são verificações separadas e consomem franquia. Um caso real bem-sucedido não garante precisão em todas as perguntas.
+No PowerShell, use `.\.venv\Scripts\python.exe -B -m unittest discover -s tests -v`.
+
+A suíte padrão usa bases temporárias e provedores simulados, sem chamadas reais de IA. Testes de PostgreSQL são opcionais. Verificações de interface e chamadas reais têm procedimentos separados no [guia de testes](tests/README.md).
 
 ## Organização do código
 
 | Local | Responsabilidade |
 | --- | --- |
-| `data/raw/` | CSVs de origem usados na demonstração |
+| `data/raw/` | CSVs da demonstração |
 | `src/etl/` e `sql/schema.sql` | Carga validada e modelo relacional |
 | `src/analytics/` | Métricas e consultas determinísticas |
-| `src/ai/` | Integração com provedores e validação dos planos |
+| `src/ai/` | Provedores e validação dos planos de análise |
 | `src/api/` | Rotas, autenticação e coordenação da análise |
-| `src/demo/` | Identidade, configuração e cotas persistentes |
-| `src/web/` | Interface e gráficos em português brasileiro |
-| `tests/` e `scripts/` | Testes e utilitários de execução/verificação |
-| `docs/` | Guias técnicos, decisões e checkpoints históricos |
+| `src/demo/` | Configuração, identidade e cotas persistentes |
+| `src/web/` | Interface e gráficos |
+| `tests/` e `scripts/` | Testes e utilitários |
+| `docs/` | Guias técnicos, decisões e checkpoints |
 
-## Documentação e evolução
+## Próximos passos
 
-- [Guia do protótipo](docs/prototype.pt-BR.md) · [English guide](docs/prototype.md)
-- [Acesso, autenticação e cotas](docs/demo-access.pt-BR.md) · [English](docs/demo-access.md)
+- Melhorar as mensagens de erro e a observabilidade do fluxo de acesso e IA.
+- Ampliar os exemplos e as verificações das respostas dos modelos.
+- Evoluir as análises e comparações entre períodos.
+- Investigar o reaproveitamento de dados tratados no Qlik Sense, com métricas e relacionamentos explícitos por base.
+
+Esses itens são direções de evolução, não funcionalidades disponíveis. Ler QVDs não reproduz automaticamente as medidas e associações de um aplicativo Qlik.
+
+## Documentação
+
+- [Guia do protótipo](docs/prototype.pt-BR.md)
+- [Acesso, autenticação e cotas](docs/demo-access.pt-BR.md)
 - [Publicação na Vercel](docs/deployment.pt-BR.md)
 - [Fluxo técnico de análise — English](docs/business-analysis.md)
-- [Guia de desenvolvimento e aprendizado](docs/desenvolvimento.pt-BR.md)
-- [Testes](tests/README.md) · [Diagnóstico de 21/10/2026](docs/checkpoint-2026-10-21.md)
-
-Os checkpoints registram o estado de cada sessão; afirmações históricas podem ter sido superadas. A situação atual está resumida neste README.
-
-O próximo objetivo é validar o login e a IA no ambiente publicado e concluir uma demo confiável. Como evolução futura, pretende-se reutilizar dados já tratados no Qlik Sense, com métricas e relacionamentos explícitos por base. A leitura de QVDs não reproduz automaticamente medidas e associações de um aplicativo Qlik e ainda não faz parte da implementação.
+- [Desenvolvimento e aprendizado](docs/desenvolvimento.pt-BR.md)
+- [Testes e validação](tests/README.md)
